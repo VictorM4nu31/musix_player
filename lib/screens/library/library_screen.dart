@@ -6,6 +6,7 @@ import '../../core/widgets/error_view.dart';
 import '../../core/widgets/loading_indicator.dart';
 import '../../core/widgets/song_tile.dart';
 import '../../providers/audio_provider.dart';
+import '../../providers/favorites_provider.dart';
 import '../../providers/songs_provider.dart';
 import 'widgets/library_search_bar.dart';
 import 'widgets/library_sort_menu.dart';
@@ -32,6 +33,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     dynamic song,
     List<dynamic> songs,
   ) {
+    final favoritesService = ref.read(favoritesServiceProvider);
+    final isFavorite = favoritesService.isFavorite(song.id);
+
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -57,6 +61,21 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+              ),
+              ListTile(
+                leading: Icon(
+                  isFavorite
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  color: isFavorite ? theme.colorScheme.error : null,
+                ),
+                title: Text(
+                  isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos',
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  favoritesService.toggleFavorite(song.id);
+                },
               ),
               ListTile(
                 leading: const Icon(Icons.playlist_play_rounded),

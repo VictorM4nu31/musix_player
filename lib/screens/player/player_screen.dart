@@ -6,6 +6,8 @@ import '../../core/utils/formatters.dart';
 import '../../core/widgets/artwork_image.dart';
 import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
+import '../../providers/favorites_provider.dart';
+import '../../services/audio/audio_player_service.dart';
 
 class PlayerScreen extends ConsumerWidget {
   const PlayerScreen({super.key});
@@ -37,7 +39,7 @@ class PlayerScreen extends ConsumerWidget {
   }
 }
 
-class _PlayerContent extends StatelessWidget {
+class _PlayerContent extends ConsumerWidget {
   const _PlayerContent({
     required this.song,
     required this.isPlaying,
@@ -50,10 +52,11 @@ class _PlayerContent extends StatelessWidget {
   final bool isPlaying;
   final Duration position;
   final Duration? duration;
-  final dynamic audioService;
+  final AudioPlayerService audioService;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFavorite = ref.watch(isFavoriteProvider(song.id));
     final theme = Theme.of(context);
     final totalDuration = duration ?? song.duration;
 
@@ -71,7 +74,7 @@ class _PlayerContent extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            _buildAppBar(context, theme),
+            _buildAppBar(context, ref, theme, isFavorite),
             const Spacer(flex: 2),
             _buildArtwork(theme),
             const Spacer(flex: 2),
@@ -89,7 +92,7 @@ class _PlayerContent extends StatelessWidget {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, ThemeData theme) {
+  Widget _buildAppBar(BuildContext context, WidgetRef ref, ThemeData theme, bool isFavorite) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
@@ -105,6 +108,15 @@ class _PlayerContent extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              ref.read(favoritesServiceProvider).toggleFavorite(song.id);
+            },
+            icon: Icon(
+              isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+              color: isFavorite ? theme.colorScheme.error : null,
             ),
           ),
           IconButton(

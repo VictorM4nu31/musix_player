@@ -1,30 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:audio_service/audio_service.dart';
 import '../../data/models/song_model.dart';
 import '../../services/audio/audio_player_service.dart';
 import '../../services/audio/audio_handler.dart';
+import '../../main.dart' as main_app;
 
 final audioPlayerServiceProvider = Provider<AudioPlayerService>((ref) {
-  final service = AudioPlayerService();
-  ref.onDispose(() => service.dispose());
-  return service;
+  return main_app.audioService;
 });
 
-final audioHandlerProvider = FutureProvider<MusixAudioHandler>((ref) async {
-  final audioService = ref.read(audioPlayerServiceProvider);
-
-  final handler = await AudioService.init(
-    builder: () => MusixAudioHandler(audioService),
-    config: const AudioServiceConfig(
-      androidNotificationChannelId: 'com.musix_player.channel.audio',
-      androidNotificationChannelName: 'Musix Player',
-      androidNotificationOngoing: true,
-      androidStopForegroundOnPause: true,
-    ),
-  );
-
-  ref.onDispose(() => handler.stop());
-  return handler;
+final audioHandlerProvider = Provider<MusixAudioHandler>((ref) {
+  return main_app.audioHandler;
 });
 
 final currentSongProvider = StreamProvider<SongModel?>((ref) {

@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:audio_service/audio_service.dart';
 import 'app/app.dart';
-import 'providers/audio_provider.dart';
+import 'services/audio/audio_player_service.dart';
+import 'services/audio/audio_handler.dart';
 
-void main() async {
+late AudioPlayerService audioService;
+late MusixAudioHandler audioHandler;
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final container = ProviderContainer();
-  await container.read(audioHandlerProvider.future);
+  audioService = AudioPlayerService();
 
-  runApp(
-    UncontrolledProviderScope(
-      container: container,
-      child: const MusixPlayerApp(),
+  audioHandler = await AudioService.init(
+    builder: () => MusixAudioHandler(audioService),
+    config: const AudioServiceConfig(
+      androidNotificationChannelId: 'com.musix_player.channel.audio',
+      androidNotificationChannelName: 'Musix Player',
+      androidNotificationOngoing: true,
+      androidStopForegroundOnPause: true,
+      androidNotificationIcon: 'mipmap/ic_launcher',
     ),
   );
+
+  runApp(const MusixPlayerApp());
 }
