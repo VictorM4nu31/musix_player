@@ -13,9 +13,11 @@ class MusixAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
   AudioPlayer get _player => _audioService.player;
   StreamSubscription<List<SongModel>>? _queueSubscription;
   StreamSubscription<SongModel?>? _songSubscription;
+  StreamSubscription<PlaybackEvent>? _playbackEventSubscription;
+  StreamSubscription<Duration>? _positionSubscription;
 
   void _init() {
-    _player.playbackEventStream.listen(_onPlaybackEvent);
+    _playbackEventSubscription = _player.playbackEventStream.listen(_onPlaybackEvent);
 
     _songSubscription = _audioService.currentSongStream.listen((song) {
       if (song != null) {
@@ -28,7 +30,7 @@ class MusixAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
       this.queue.add(items);
     });
 
-    _audioService.positionStream.listen((position) {
+    _positionSubscription = _audioService.positionStream.listen((position) {
       playbackState.add(playbackState.value.copyWith(updatePosition: position));
     });
   }
@@ -136,7 +138,9 @@ class MusixAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
   }
 
   Future<void> dispose() async {
-    await _queueSubscription?.cancel();
+    await _playbackEventSubscription?.cancel();
     await _songSubscription?.cancel();
+    await _queueSubscription?.cancel();
+    await _positionSubscription?.cancel();
   }
 }

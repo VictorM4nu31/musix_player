@@ -17,6 +17,9 @@ class AudioPlayerService {
   final _currentSongController = StreamController<SongModel?>.broadcast();
   final _songStartedController = StreamController<SongModel>.broadcast();
 
+  StreamSubscription<int?>? _indexSubscription;
+  StreamSubscription<ProcessingState>? _processingSubscription;
+
   AudioPlayer get player => _player;
   List<SongModel> get queue => List.unmodifiable(_queue);
   int get currentIndex => _currentIndex;
@@ -39,7 +42,7 @@ class AudioPlayerService {
   Stream<SongModel> get songStartedStream => _songStartedController.stream;
 
   void _init() {
-    _player.currentIndexStream.listen((index) {
+    _indexSubscription = _player.currentIndexStream.listen((index) {
       if (index != null) {
         _currentIndex = index;
         final song = currentSong;
@@ -50,7 +53,7 @@ class AudioPlayerService {
       }
     });
 
-    _player.processingStateStream.listen((state) {
+    _processingSubscription = _player.processingStateStream.listen((state) {
       if (state == ProcessingState.completed) {
         _handleSongComplete();
       }
@@ -206,6 +209,8 @@ class AudioPlayerService {
   }
 
   Future<void> dispose() async {
+    await _indexSubscription?.cancel();
+    await _processingSubscription?.cancel();
     await _queueController.close();
     await _currentSongController.close();
     await _songStartedController.close();

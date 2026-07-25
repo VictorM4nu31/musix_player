@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
 import 'services/audio/audio_player_service.dart';
 import 'services/audio/audio_handler.dart';
@@ -32,5 +33,9 @@ Future<void> main() async {
     ),
   );
 
-  runApp(const MusixPlayerApp());
+  runApp(
+    const ProviderScope(
+      child: MusixPlayerApp(),
+    ),
+  );
 }

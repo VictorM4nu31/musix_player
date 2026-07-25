@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../core/utils/page_transitions.dart';
 import '../screens/library/library_screen.dart';
 import '../screens/playlists/playlists_screen.dart';
 import '../screens/playlists/playlist_detail_screen.dart';
@@ -66,41 +67,15 @@ final router = GoRouter(
     GoRoute(
       path: '/player',
       parentNavigatorKey: _rootNavigatorKey,
-      pageBuilder: (context, state) => CustomTransitionPage(
-        fullscreenDialog: true,
+      pageBuilder: (context, state) => PageTransitions.slideFromBottom(
         child: const PlayerScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 1),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
-            child: child,
-          );
-        },
       ),
     ),
     GoRoute(
       path: '/queue',
       parentNavigatorKey: _rootNavigatorKey,
-      pageBuilder: (context, state) => CustomTransitionPage(
-        fullscreenDialog: true,
+      pageBuilder: (context, state) => PageTransitions.slideFromBottom(
         child: const QueueScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 1),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
-            child: child,
-          );
-        },
       ),
     ),
     GoRoute(
@@ -108,42 +83,16 @@ final router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) {
         final playlistId = state.pathParameters['id']!;
-        return CustomTransitionPage(
-          fullscreenDialog: true,
+        return PageTransitions.slideFromRight(
           child: PlaylistDetailScreen(playlistId: playlistId),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(1, 0),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              )),
-              child: child,
-            );
-          },
         );
       },
     ),
     GoRoute(
       path: '/history',
       parentNavigatorKey: _rootNavigatorKey,
-      pageBuilder: (context, state) => CustomTransitionPage(
-        fullscreenDialog: true,
+      pageBuilder: (context, state) => PageTransitions.slideFromRight(
         child: const HistoryScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
-            child: child,
-          );
-        },
       ),
     ),
   ],

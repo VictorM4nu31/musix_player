@@ -262,8 +262,8 @@ class _PlayerContent extends ConsumerWidget {
     );
   }
 
-  IconData _getLoopIcon(dynamic loopMode) {
-    if (loopMode.toString().contains('one')) {
+  IconData _getLoopIcon(LoopMode loopMode) {
+    if (loopMode == LoopMode.one) {
       return Icons.repeat_one_rounded;
     }
     return Icons.repeat_rounded;

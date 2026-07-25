@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/song_tile.dart';
+import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
 import '../../providers/history_provider.dart';
+import '../../services/history/history_service.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
@@ -41,7 +43,7 @@ class HistoryScreen extends ConsumerWidget {
             return const EmptyState(
               icon: Icons.history_rounded,
               title: 'Sin historial',
-              subtitle: 'Las canciones que reprouzcas aparecerán aquí',
+              subtitle: 'Las canciones que reproduzcas aparecerán aquí',
             );
           }
 
@@ -99,7 +101,7 @@ class HistoryScreen extends ConsumerWidget {
   void _showClearDialog(
     BuildContext context,
     WidgetRef ref,
-    dynamic historyService,
+    HistoryService historyService,
   ) {
     showDialog(
       context: context,
@@ -131,8 +133,8 @@ class HistoryScreen extends ConsumerWidget {
   void _showSongContextMenu(
     BuildContext context,
     WidgetRef ref,
-    dynamic song,
-    dynamic historyService,
+    SongModel song,
+    HistoryService historyService,
   ) {
     showModalBottomSheet(
       context: context,

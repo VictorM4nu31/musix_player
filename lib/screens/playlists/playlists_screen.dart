@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../data/models/playlist_model.dart';
 import '../../providers/playlist_provider.dart';
 
 class PlaylistsScreen extends ConsumerWidget {
@@ -122,7 +123,7 @@ class PlaylistsScreen extends ConsumerWidget {
   void _showPlaylistOptions(
     BuildContext context,
     WidgetRef ref,
-    dynamic playlist,
+    PlaylistModel playlist,
   ) {
     showModalBottomSheet(
       context: context,
@@ -183,7 +184,7 @@ class PlaylistsScreen extends ConsumerWidget {
   void _showEditDialog(
     BuildContext context,
     WidgetRef ref,
-    dynamic playlist,
+    PlaylistModel playlist,
   ) {
     final controller = TextEditingController(text: playlist.name);
 
@@ -238,7 +239,7 @@ class _PlaylistTile extends StatelessWidget {
     required this.onLongPress,
   });
 
-  final dynamic playlist;
+  final PlaylistModel playlist;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 

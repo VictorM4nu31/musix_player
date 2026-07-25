@@ -11,15 +11,13 @@ class MusixPlayerApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
 
-    return ProviderScope(
-      child: MaterialApp.router(
-        title: 'Musix Player',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: themeMode,
-        routerConfig: router,
-      ),
+    return MaterialApp.router(
+      title: 'Musix Player',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themeMode,
+      routerConfig: router,
     );
   }
 }

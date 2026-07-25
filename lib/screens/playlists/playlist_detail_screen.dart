@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/song_tile.dart';
+import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
 import '../../providers/playlist_provider.dart';
 import '../../services/playlist/playlist_service.dart';
@@ -100,8 +101,8 @@ class PlaylistDetailScreen extends ConsumerWidget {
   void _showSongContextMenu(
     BuildContext context,
     WidgetRef ref,
-    dynamic song,
-    List<dynamic> songs,
+    SongModel song,
+    List<SongModel> songs,
     PlaylistService playlistService,
   ) {
     showModalBottomSheet(

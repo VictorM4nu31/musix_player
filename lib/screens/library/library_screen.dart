@@ -5,9 +5,11 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
 import '../../core/widgets/loading_indicator.dart';
 import '../../core/widgets/song_tile.dart';
+import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/playlist_provider.dart';
+import '../../services/playlist/playlist_service.dart';
 import '../../providers/songs_provider.dart';
 import 'widgets/library_search_bar.dart';
 import 'widgets/library_sort_menu.dart';
@@ -31,8 +33,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   void _showSongContextMenu(
     BuildContext context,
     WidgetRef ref,
-    dynamic song,
-    List<dynamic> songs,
+    SongModel song,
+    List<SongModel> songs,
   ) {
     final favoritesService = ref.read(favoritesServiceProvider);
     final isFavorite = favoritesService.isFavorite(song.id);
@@ -118,8 +120,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   void _showPlaylistPicker(
     BuildContext context,
     WidgetRef ref,
-    dynamic song,
-    dynamic playlistService,
+    SongModel song,
+    PlaylistService playlistService,
   ) {
     final playlists = playlistService.playlists;
 
