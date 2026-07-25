@@ -47,9 +47,9 @@ final durationProvider = StreamProvider<Duration?>((ref) {
   return audioService.durationStream;
 });
 
-final queueProvider = Provider<List<SongModel>>((ref) {
+final queueProvider = StreamProvider<List<SongModel>>((ref) {
   final audioService = ref.watch(audioPlayerServiceProvider);
-  return audioService.queue;
+  return audioService.queueStream;
 });
 
 final currentIndexProvider = Provider<int>((ref) {

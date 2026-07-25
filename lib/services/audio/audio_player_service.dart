@@ -13,6 +13,9 @@ class AudioPlayerService {
   bool _isShuffleMode = false;
   LoopMode _loopMode = LoopMode.off;
 
+  final _queueController = StreamController<List<SongModel>>.broadcast();
+  final _currentSongController = StreamController<SongModel?>.broadcast();
+
   AudioPlayer get player => _player;
   List<SongModel> get queue => List.unmodifiable(_queue);
   int get currentIndex => _currentIndex;
@@ -30,19 +33,14 @@ class AudioPlayerService {
   Stream<bool> get playingStream => _player.playingStream;
   Stream<ProcessingState> get processingStateStream =>
       _player.processingStateStream;
-
-  Stream<SongModel?> get currentSongStream async* {
-    yield currentSong;
-    await for (final _ in _player.currentIndexStream) {
-      _currentIndex = _player.currentIndex ?? 0;
-      yield currentSong;
-    }
-  }
+  Stream<List<SongModel>> get queueStream => _queueController.stream;
+  Stream<SongModel?> get currentSongStream => _currentSongController.stream;
 
   void _init() {
     _player.currentIndexStream.listen((index) {
       if (index != null) {
         _currentIndex = index;
+        _currentSongController.add(currentSong);
       }
     });
 
@@ -51,6 +49,10 @@ class AudioPlayerService {
         _handleSongComplete();
       }
     });
+  }
+
+  void _emitQueue() {
+    _queueController.add(queue);
   }
 
   Future<void> play(SongModel song, {List<SongModel>? playlist}) async {
@@ -68,6 +70,8 @@ class AudioPlayerService {
       _currentIndex = _queue.indexWhere((s) => s.id == song.id);
     }
 
+    _emitQueue();
+    _currentSongController.add(currentSong);
     await _loadCurrentSong();
     await _player.play();
   }
@@ -142,9 +146,21 @@ class AudioPlayerService {
     if (_loopMode == LoopMode.one) {
       _player.seek(Duration.zero);
       _player.play();
-    } else if (_currentIndex < _queue.length - 1 || _loopMode == LoopMode.all) {
+    } else if (_currentIndex < _queue.length - 1 ||
+        _loopMode == LoopMode.all) {
       seekToNext();
     }
+  }
+
+  Future<void> addToQueue(SongModel song) async {
+    _queue.add(song);
+    _emitQueue();
+  }
+
+  Future<void> addNext(SongModel song) async {
+    final insertIndex = _currentIndex + 1;
+    _queue.insert(insertIndex, song);
+    _emitQueue();
   }
 
   Future<void> removeFromQueue(int index) async {
@@ -155,6 +171,7 @@ class AudioPlayerService {
     } else if (index == _currentIndex && _currentIndex >= _queue.length) {
       _currentIndex = _queue.length - 1;
     }
+    _emitQueue();
   }
 
   Future<void> reorderQueue(int oldIndex, int newIndex) async {
@@ -171,15 +188,20 @@ class AudioPlayerService {
     } else if (oldIndex > _currentIndex && newIndex <= _currentIndex) {
       _currentIndex++;
     }
+    _emitQueue();
   }
 
   void clearQueue() {
     _queue.clear();
     _currentIndex = -1;
     _player.stop();
+    _emitQueue();
+    _currentSongController.add(null);
   }
 
   Future<void> dispose() async {
+    await _queueController.close();
+    await _currentSongController.close();
     await _player.dispose();
   }
 }

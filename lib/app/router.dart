@@ -6,6 +6,7 @@ import '../screens/favorites/favorites_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/mini_player/mini_player_widget.dart';
 import '../screens/player/player_screen.dart';
+import '../screens/queue/queue_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -66,6 +67,14 @@ final router = GoRouter(
       pageBuilder: (context, state) => const MaterialPage(
         fullscreenDialog: true,
         child: PlayerScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/queue',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => const MaterialPage(
+        fullscreenDialog: true,
+        child: QueueScreen(),
       ),
     ),
   ],

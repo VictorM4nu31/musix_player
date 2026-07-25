@@ -26,6 +26,66 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     super.dispose();
   }
 
+  void _showSongContextMenu(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic song,
+    List<dynamic> songs,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurfaceVariant.withAlpha(80),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  song.title,
+                  style: theme.textTheme.titleMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.playlist_play_rounded),
+                title: const Text('Agregar a la cola'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ref
+                      .read(audioPlayerServiceProvider)
+                      .addToQueue(song);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.skip_next_rounded),
+                title: const Text('Reproducir siguiente'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ref
+                      .read(audioPlayerServiceProvider)
+                      .addNext(song);
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final songsState = ref.watch(songsProvider);
@@ -132,6 +192,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                   playlist: songs,
                                 );
                                 context.push('/player');
+                              },
+                              onMorePressed: () {
+                                _showSongContextMenu(
+                                  context,
+                                  ref,
+                                  song,
+                                  songs,
+                                );
                               },
                             );
                           },

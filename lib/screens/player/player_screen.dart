@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/artwork_image.dart';
@@ -108,7 +109,7 @@ class _PlayerContent extends StatelessWidget {
           ),
           IconButton(
             onPressed: () {
-              // TODO: Queue screen
+              context.push('/queue');
             },
             icon: const Icon(Icons.queue_music_rounded),
           ),
@@ -122,10 +123,15 @@ class _PlayerContent extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: AspectRatio(
         aspectRatio: 1,
-        child: ArtworkImage(
-          imageUri: song.artworkUri,
-          size: double.infinity,
-          borderRadius: 24,
+        child: AnimatedRotation(
+          turns: isPlaying ? 1 : 0,
+          duration: const Duration(seconds: 20),
+          curve: Curves.linear,
+          child: ArtworkImage(
+            imageUri: song.artworkUri,
+            size: double.infinity,
+            borderRadius: 24,
+          ),
         ),
       ),
     );

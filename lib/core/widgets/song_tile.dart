@@ -15,6 +15,7 @@ class SongTile extends StatelessWidget {
     this.trailing,
     this.onTap,
     this.onLongPress,
+    this.onMorePressed,
   });
 
   final String title;
@@ -26,6 +27,7 @@ class SongTile extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
+  final VoidCallback? onMorePressed;
 
   @override
   Widget build(BuildContext context) {
@@ -92,10 +94,15 @@ class SongTile extends StatelessWidget {
               trailing!,
             ] else ...[
               const SizedBox(width: 4),
-              Icon(
-                Icons.more_vert,
-                size: 20,
-                color: theme.textTheme.bodySmall?.color,
+              IconButton(
+                icon: Icon(
+                  Icons.more_vert,
+                  size: 20,
+                  color: theme.textTheme.bodySmall?.color,
+                ),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: onMorePressed,
               ),
             ],
           ],
