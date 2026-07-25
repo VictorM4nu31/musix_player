@@ -24,4 +24,15 @@ abstract final class Formatters {
     }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
+
+  static String formatDateShort(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dateOnly = DateTime(date.year, date.month, date.day);
+
+    if (dateOnly == today) return 'Hoy';
+    if (dateOnly == today.subtract(const Duration(days: 1))) return 'Ayer';
+
+    return '${date.day}/${date.month}/${date.year}';
+  }
 }

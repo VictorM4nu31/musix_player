@@ -15,6 +15,7 @@ class AudioPlayerService {
 
   final _queueController = StreamController<List<SongModel>>.broadcast();
   final _currentSongController = StreamController<SongModel?>.broadcast();
+  final _songStartedController = StreamController<SongModel>.broadcast();
 
   AudioPlayer get player => _player;
   List<SongModel> get queue => List.unmodifiable(_queue);
@@ -35,12 +36,17 @@ class AudioPlayerService {
       _player.processingStateStream;
   Stream<List<SongModel>> get queueStream => _queueController.stream;
   Stream<SongModel?> get currentSongStream => _currentSongController.stream;
+  Stream<SongModel> get songStartedStream => _songStartedController.stream;
 
   void _init() {
     _player.currentIndexStream.listen((index) {
       if (index != null) {
         _currentIndex = index;
-        _currentSongController.add(currentSong);
+        final song = currentSong;
+        _currentSongController.add(song);
+        if (song != null) {
+          _songStartedController.add(song);
+        }
       }
     });
 
@@ -202,6 +208,7 @@ class AudioPlayerService {
   Future<void> dispose() async {
     await _queueController.close();
     await _currentSongController.close();
+    await _songStartedController.close();
     await _player.dispose();
   }
 }

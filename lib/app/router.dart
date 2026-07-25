@@ -4,6 +4,7 @@ import '../screens/library/library_screen.dart';
 import '../screens/playlists/playlists_screen.dart';
 import '../screens/playlists/playlist_detail_screen.dart';
 import '../screens/favorites/favorites_screen.dart';
+import '../screens/history/history_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/mini_player/mini_player_widget.dart';
 import '../screens/player/player_screen.dart';
@@ -88,6 +89,14 @@ final router = GoRouter(
           child: PlaylistDetailScreen(playlistId: playlistId),
         );
       },
+    ),
+    GoRoute(
+      path: '/history',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => const MaterialPage(
+        fullscreenDialog: true,
+        child: HistoryScreen(),
+      ),
     ),
   ],
 );
