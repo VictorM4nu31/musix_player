@@ -7,6 +7,7 @@ import '../../core/widgets/loading_indicator.dart';
 import '../../core/widgets/song_tile.dart';
 import '../../providers/audio_provider.dart';
 import '../../providers/favorites_provider.dart';
+import '../../providers/playlist_provider.dart';
 import '../../providers/songs_provider.dart';
 import 'widgets/library_search_bar.dart';
 import 'widgets/library_sort_menu.dart';
@@ -35,6 +36,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   ) {
     final favoritesService = ref.read(favoritesServiceProvider);
     final isFavorite = favoritesService.isFavorite(song.id);
+    final playlistService = ref.read(playlistServiceProvider);
 
     showModalBottomSheet(
       context: context,
@@ -78,6 +80,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.playlist_add_rounded),
+                title: const Text('Agregar a playlist'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showPlaylistPicker(context, ref, song, playlistService);
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.playlist_play_rounded),
                 title: const Text('Agregar a la cola'),
                 onTap: () {
@@ -97,6 +107,73 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       .addNext(song);
                 },
               ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showPlaylistPicker(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic song,
+    dynamic playlistService,
+  ) {
+    final playlists = playlistService.playlists;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurfaceVariant.withAlpha(80),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Agregar a playlist',
+                  style: theme.textTheme.titleMedium,
+                ),
+              ),
+              if (playlists.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text('No hay playlists creadas'),
+                )
+              else
+                ...playlists.map(
+                  (playlist) => ListTile(
+                    leading: const Icon(Icons.queue_music_rounded),
+                    title: Text(playlist.name),
+                    subtitle: Text('${playlist.songIds.length} canciones'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      playlistService.addSongToPlaylist(
+                        playlist.id,
+                        song.id,
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Agregado a ${playlist.name}',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               const SizedBox(height: 16),
             ],
           ),

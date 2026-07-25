@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/library/library_screen.dart';
 import '../screens/playlists/playlists_screen.dart';
+import '../screens/playlists/playlist_detail_screen.dart';
 import '../screens/favorites/favorites_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/mini_player/mini_player_widget.dart';
@@ -76,6 +77,17 @@ final router = GoRouter(
         fullscreenDialog: true,
         child: QueueScreen(),
       ),
+    ),
+    GoRoute(
+      path: '/playlists/:id',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final playlistId = state.pathParameters['id']!;
+        return MaterialPage(
+          fullscreenDialog: true,
+          child: PlaylistDetailScreen(playlistId: playlistId),
+        );
+      },
     ),
   ],
 );
