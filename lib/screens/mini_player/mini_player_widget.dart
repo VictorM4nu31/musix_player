@@ -1,90 +1,102 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/widgets/artwork_image.dart';
+import '../../providers/audio_provider.dart';
 
-class MiniPlayerWidget extends StatelessWidget {
+class MiniPlayerWidget extends ConsumerWidget {
   const MiniPlayerWidget({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentSong = ref.watch(currentSongProvider);
+    final isPlaying = ref.watch(isPlayingProvider);
+    final audioService = ref.read(audioPlayerServiceProvider);
     final theme = Theme.of(context);
 
-    return Container(
-      height: 64,
-      decoration: BoxDecoration(
-        color: theme.bottomNavigationBarTheme.backgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(15),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
+    return currentSong.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (song) {
+        if (song == null) {
+          return const SizedBox.shrink();
+        }
+
+        final playing = isPlaying.valueOrNull ?? false;
+
+        return Container(
+          height: 64,
+          decoration: BoxDecoration(
+            color: theme.bottomNavigationBarTheme.backgroundColor,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(15),
+                blurRadius: 8,
+                offset: const Offset(0, -2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            // TODO: Navigate to full player
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: theme.colorScheme.primary.withAlpha(30),
-                  ),
-                  child: Icon(
-                    Icons.music_note_rounded,
-                    color: theme.colorScheme.primary.withAlpha(150),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Sin reproducción',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => context.push('/player'),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  children: [
+                    ArtworkImage(
+                      imageUri: song.artworkUri,
+                      size: 44,
+                      borderRadius: 8,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            song.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            song.artist,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
                       ),
-                      Text(
-                        'Selecciona una canción',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall,
+                    ),
+                    IconButton(
+                      onPressed: () => audioService.togglePlayPause(),
+                      icon: Icon(
+                        playing
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        color: theme.colorScheme.primary,
+                        size: 32,
                       ),
-                    ],
-                  ),
+                    ),
+                    IconButton(
+                      onPressed: () => audioService.seekToNext(),
+                      icon: Icon(
+                        Icons.skip_next_rounded,
+                        color: theme.textTheme.bodySmall?.color,
+                        size: 28,
+                      ),
+                    ),
+                  ],
                 ),
-                IconButton(
-                  onPressed: null,
-                  icon: Icon(
-                    Icons.play_arrow_rounded,
-                    color: theme.colorScheme.primary,
-                    size: 32,
-                  ),
-                ),
-                IconButton(
-                  onPressed: null,
-                  icon: Icon(
-                    Icons.skip_next_rounded,
-                    color: theme.textTheme.bodySmall?.color,
-                    size: 28,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
 import '../../core/widgets/loading_indicator.dart';
 import '../../core/widgets/song_tile.dart';
+import '../../providers/audio_provider.dart';
 import '../../providers/songs_provider.dart';
 import 'widgets/library_search_bar.dart';
 import 'widgets/library_sort_menu.dart';
@@ -123,7 +125,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               duration: song.duration,
                               artworkUri: song.artworkUri,
                               onTap: () {
-                                // TODO: Play song - Phase 3
+                                final audioService =
+                                    ref.read(audioPlayerServiceProvider);
+                                audioService.play(
+                                  song,
+                                  playlist: songs,
+                                );
+                                context.push('/player');
                               },
                             );
                           },
