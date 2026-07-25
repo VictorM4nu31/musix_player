@@ -1,16 +1,141 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/error_view.dart';
+import '../../core/widgets/loading_indicator.dart';
+import '../../core/widgets/song_tile.dart';
+import '../../providers/songs_provider.dart';
+import 'widgets/library_search_bar.dart';
+import 'widgets/library_sort_menu.dart';
 
-class LibraryScreen extends StatelessWidget {
+class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
 
   @override
+  ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
+}
+
+class _LibraryScreenState extends ConsumerState<LibraryScreen> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: EmptyState(
-        icon: Icons.library_music_rounded,
-        title: 'Tu biblioteca',
-        subtitle: 'Las canciones de tu dispositivo aparecerán aquí',
+    final songsState = ref.watch(songsProvider);
+    final songsNotifier = ref.read(songsProvider.notifier);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Biblioteca'),
+        actions: [
+          LibrarySortMenu(
+            currentOption: songsNotifier.sortOption,
+            onChanged: songsNotifier.setSortOption,
+          ),
+          IconButton(
+            onPressed: () => songsNotifier.loadSongs(forceRefresh: true),
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Actualizar biblioteca',
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          LibrarySearchBar(
+            controller: _searchController,
+            onChanged: songsNotifier.setSearchQuery,
+          ),
+          Expanded(
+            child: songsState.when(
+              loading: () => const LoadingIndicator(
+                message: 'Escaneando biblioteca...',
+              ),
+              error: (error, stack) {
+                final message = error.toString();
+                if (message.contains('Permiso')) {
+                  return EmptyState(
+                    icon: Icons.lock_outline_rounded,
+                    title: 'Permiso requerido',
+                    subtitle:
+                        'Necesitamos acceso a tu música para mostrar tu biblioteca',
+                    actionLabel: 'Conceder permiso',
+                    onAction: () => songsNotifier.loadSongs(forceRefresh: true),
+                  );
+                }
+                return ErrorView(
+                  message: message,
+                  onRetry: () =>
+                      songsNotifier.loadSongs(forceRefresh: true),
+                );
+              },
+              data: (songs) {
+                if (songs.isEmpty) {
+                  if (_searchController.text.isNotEmpty) {
+                    return const EmptyState(
+                      icon: Icons.search_off_rounded,
+                      title: 'Sin resultados',
+                      subtitle:
+                          'No se encontraron canciones con ese término',
+                    );
+                  }
+                  return EmptyState(
+                    icon: Icons.library_music_rounded,
+                    title: 'Sin canciones',
+                    subtitle:
+                        'No se encontraron archivos de música en tu dispositivo',
+                    actionLabel: 'Actualizar',
+                    onAction: () =>
+                        songsNotifier.loadSongs(forceRefresh: true),
+                  );
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 4,
+                      ),
+                      child: Text(
+                        '${songs.length} canciones',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: () =>
+                            songsNotifier.loadSongs(forceRefresh: true),
+                        child: ListView.builder(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          itemCount: songs.length,
+                          itemBuilder: (context, index) {
+                            final song = songs[index];
+                            return SongTile(
+                              title: song.title,
+                              artist: song.artist,
+                              album: song.album,
+                              duration: song.duration,
+                              artworkUri: song.artworkUri,
+                              onTap: () {
+                                // TODO: Play song - Phase 3
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

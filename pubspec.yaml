@@ -24,6 +24,10 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.28
   shared_preferences: ^2.3.4
 
+  # Device access & permissions
+  permission_handler: ^11.3.1
+  device_info_plus: ^10.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
