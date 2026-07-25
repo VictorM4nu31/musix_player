@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/song_model.dart';
 import '../services/history/history_service.dart';
-import '../main.dart' as main_app;
+import '../core/service_locator.dart' as locator;
 
 final historyServiceProvider = Provider<HistoryService>((ref) {
-  return main_app.historyService;
+  return locator.historyService;
 });
 
 final historyProvider = StreamProvider<List<HistoryEntry>>((ref) {

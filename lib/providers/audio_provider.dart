@@ -1,15 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/song_model.dart';
-import '../../services/audio/audio_player_service.dart';
-import '../../services/audio/audio_handler.dart';
-import '../../main.dart' as main_app;
+import '../data/models/song_model.dart';
+import '../services/audio/audio_player_service.dart';
+import '../services/audio/audio_handler.dart';
+import '../core/service_locator.dart' as locator;
 
 final audioPlayerServiceProvider = Provider<AudioPlayerService>((ref) {
-  return main_app.audioService;
+  return locator.audioService;
 });
 
 final audioHandlerProvider = Provider<MusixAudioHandler>((ref) {
-  return main_app.audioHandler;
+  return locator.audioHandler;
 });
 
 final currentSongProvider = StreamProvider<SongModel?>((ref) {

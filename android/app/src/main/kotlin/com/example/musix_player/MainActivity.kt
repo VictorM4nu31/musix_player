@@ -4,11 +4,11 @@ import android.content.ContentUris
 import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
-import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import com.ryanheise.audioservice.AudioServiceFragmentActivity
 
-class MainActivity : FlutterActivity() {
+class MainActivity : AudioServiceFragmentActivity() {
 
     private val CHANNEL = "com.musix_player/music_scanner"
 
