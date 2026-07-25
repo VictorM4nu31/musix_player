@@ -1,0 +1,69 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+enum ThemePreference { system, light, dark }
+
+enum SortPreference { title, artist, album, duration, dateAdded }
+
+class SettingsService {
+  static const _themeKey = 'theme_preference';
+  static const _sortKey = 'sort_preference';
+  static const _notificationsKey = 'show_notifications';
+
+  final _controller = StreamController<ThemePreference>.broadcast();
+  ThemePreference _themePreference = ThemePreference.system;
+  SortPreference _sortPreference = SortPreference.title;
+  bool _showNotifications = true;
+
+  Stream<ThemePreference> get themeStream => _controller.stream;
+  ThemePreference get themePreference => _themePreference;
+  SortPreference get sortPreference => _sortPreference;
+  bool get showNotifications => _showNotifications;
+
+  ThemeMode get themeMode {
+    switch (_themePreference) {
+      case ThemePreference.light:
+        return ThemeMode.light;
+      case ThemePreference.dark:
+        return ThemeMode.dark;
+      case ThemePreference.system:
+        return ThemeMode.system;
+    }
+  }
+
+  Future<void> init() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final themeIndex = prefs.getInt(_themeKey) ?? 0;
+    _themePreference = ThemePreference.values[themeIndex];
+
+    final sortIndex = prefs.getInt(_sortKey) ?? 0;
+    _sortPreference = SortPreference.values[sortIndex];
+
+    _showNotifications = prefs.getBool(_notificationsKey) ?? true;
+  }
+
+  Future<void> setThemePreference(ThemePreference preference) async {
+    _themePreference = preference;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_themeKey, preference.index);
+    _controller.add(_themePreference);
+  }
+
+  Future<void> setSortPreference(SortPreference preference) async {
+    _sortPreference = preference;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_sortKey, preference.index);
+  }
+
+  Future<void> setShowNotifications(bool show) async {
+    _showNotifications = show;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notificationsKey, show);
+  }
+
+  Future<void> dispose() async {
+    await _controller.close();
+  }
+}

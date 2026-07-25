@@ -66,17 +66,41 @@ final router = GoRouter(
     GoRoute(
       path: '/player',
       parentNavigatorKey: _rootNavigatorKey,
-      pageBuilder: (context, state) => const MaterialPage(
+      pageBuilder: (context, state) => CustomTransitionPage(
         fullscreenDialog: true,
-        child: PlayerScreen(),
+        child: const PlayerScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 1),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          );
+        },
       ),
     ),
     GoRoute(
       path: '/queue',
       parentNavigatorKey: _rootNavigatorKey,
-      pageBuilder: (context, state) => const MaterialPage(
+      pageBuilder: (context, state) => CustomTransitionPage(
         fullscreenDialog: true,
-        child: QueueScreen(),
+        child: const QueueScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 1),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          );
+        },
       ),
     ),
     GoRoute(
@@ -84,18 +108,42 @@ final router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) {
         final playlistId = state.pathParameters['id']!;
-        return MaterialPage(
+        return CustomTransitionPage(
           fullscreenDialog: true,
           child: PlaylistDetailScreen(playlistId: playlistId),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+              )),
+              child: child,
+            );
+          },
         );
       },
     ),
     GoRoute(
       path: '/history',
       parentNavigatorKey: _rootNavigatorKey,
-      pageBuilder: (context, state) => const MaterialPage(
+      pageBuilder: (context, state) => CustomTransitionPage(
         fullscreenDialog: true,
-        child: HistoryScreen(),
+        child: const HistoryScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          );
+        },
       ),
     ),
   ],

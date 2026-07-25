@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/history_provider.dart';
+import '../../providers/settings_provider.dart';
+import '../../services/settings/settings_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -7,6 +10,8 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final themeMode = ref.watch(themeModeProvider);
+    final sortPreference = ref.watch(sortPreferenceProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -22,10 +27,8 @@ class SettingsScreen extends ConsumerWidget {
               _SettingsTile(
                 icon: Icons.dark_mode_rounded,
                 title: 'Tema',
-                subtitle: 'Claro',
-                onTap: () {
-                  // TODO: Theme selection
-                },
+                subtitle: _getThemeName(themeMode),
+                onTap: () => _showThemeDialog(context, ref, themeMode),
               ),
             ],
           ),
@@ -37,10 +40,8 @@ class SettingsScreen extends ConsumerWidget {
               _SettingsTile(
                 icon: Icons.sort_rounded,
                 title: 'Orden predeterminado',
-                subtitle: 'Por título',
-                onTap: () {
-                  // TODO: Default sort order
-                },
+                subtitle: _getSortName(sortPreference),
+                onTap: () => _showSortDialog(context, ref, sortPreference),
               ),
             ],
           ),
@@ -53,9 +54,7 @@ class SettingsScreen extends ConsumerWidget {
                 icon: Icons.history_rounded,
                 title: 'Limpiar historial',
                 subtitle: 'Eliminar todo el historial de reproducción',
-                onTap: () {
-                  // TODO: Clear history
-                },
+                onTap: () => _showClearHistoryDialog(context, ref),
               ),
             ],
           ),
@@ -73,6 +72,132 @@ class SettingsScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  String _getThemeName(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return 'Claro';
+      case ThemeMode.dark:
+        return 'Oscuro';
+      case ThemeMode.system:
+        return 'Sistema';
+    }
+  }
+
+  String _getSortName(SortPreference sort) {
+    switch (sort) {
+      case SortPreference.title:
+        return 'Por título';
+      case SortPreference.artist:
+        return 'Por artista';
+      case SortPreference.album:
+        return 'Por álbum';
+      case SortPreference.duration:
+        return 'Por duración';
+      case SortPreference.dateAdded:
+        return 'Por fecha';
+    }
+  }
+
+  void _showThemeDialog(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeMode currentMode,
+  ) {
+    final settingsService = ref.read(settingsServiceProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Seleccionar tema'),
+        children: [
+          _ThemeOption(
+            title: 'Sistema',
+            icon: Icons.brightness_auto_rounded,
+            isSelected: currentMode == ThemeMode.system,
+            onTap: () {
+              settingsService.setThemePreference(ThemePreference.system);
+              Navigator.pop(context);
+            },
+          ),
+          _ThemeOption(
+            title: 'Claro',
+            icon: Icons.light_mode_rounded,
+            isSelected: currentMode == ThemeMode.light,
+            onTap: () {
+              settingsService.setThemePreference(ThemePreference.light);
+              Navigator.pop(context);
+            },
+          ),
+          _ThemeOption(
+            title: 'Oscuro',
+            icon: Icons.dark_mode_rounded,
+            isSelected: currentMode == ThemeMode.dark,
+            onTap: () {
+              settingsService.setThemePreference(ThemePreference.dark);
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSortDialog(
+    BuildContext context,
+    WidgetRef ref,
+    SortPreference currentSort,
+  ) {
+    final settingsService = ref.read(settingsServiceProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Orden predeterminado'),
+        children: SortPreference.values.map((sort) {
+          return _SortOption(
+            title: _getSortName(sort),
+            isSelected: currentSort == sort,
+            onTap: () {
+              settingsService.setSortPreference(sort);
+              Navigator.pop(context);
+            },
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  void _showClearHistoryDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Limpiar historial'),
+        content: const Text(
+          '¿Estás seguro de que quieres eliminar todo el historial de reproducción?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              ref.read(historyServiceProvider).clearHistory();
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Historial eliminado')),
+              );
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Eliminar'),
+          ),
         ],
       ),
     );
@@ -139,6 +264,91 @@ class _SettingsTile extends StatelessWidget {
       onTap: onTap,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
+      ),
+    );
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  const _ThemeOption({
+    required this.title,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String title;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SimpleDialogOption(
+      onPressed: onTap,
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? theme.colorScheme.primary : null,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: TextStyle(
+              color: isSelected ? theme.colorScheme.primary : null,
+              fontWeight: isSelected ? FontWeight.w600 : null,
+            ),
+          ),
+          if (isSelected) ...[
+            const Spacer(),
+            Icon(
+              Icons.check_rounded,
+              color: theme.colorScheme.primary,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SortOption extends StatelessWidget {
+  const _SortOption({
+    required this.title,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String title;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SimpleDialogOption(
+      onPressed: onTap,
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: isSelected ? theme.colorScheme.primary : null,
+              fontWeight: isSelected ? FontWeight.w600 : null,
+            ),
+          ),
+          if (isSelected) ...[
+            const Spacer(),
+            Icon(
+              Icons.check_rounded,
+              color: theme.colorScheme.primary,
+            ),
+          ],
+        ],
       ),
     );
   }
