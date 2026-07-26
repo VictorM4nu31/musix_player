@@ -10,8 +10,17 @@ final blacklistServiceProvider = Provider<BlacklistService>((ref) {
 
 final blacklistIdsProvider = StreamProvider<Set<int>>((ref) {
   final service = ref.watch(blacklistServiceProvider);
-  return service.blacklistStream;
+  return _seededBlacklistStream(service.blacklistedIds, service.blacklistStream);
 });
+
+/// Emits the current value immediately, then forwards all stream events.
+Stream<Set<int>> _seededBlacklistStream(
+  Set<int> currentValue,
+  Stream<Set<int>> stream,
+) async* {
+  yield currentValue;
+  yield* stream;
+}
 
 final blacklistedSongsProvider = Provider<AsyncValue<List<SongModel>>>((ref) {
   final songsAsync = ref.watch(songsProvider);

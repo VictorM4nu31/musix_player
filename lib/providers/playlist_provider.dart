@@ -1,21 +1,27 @@
-import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/playlist_model.dart';
 import '../data/models/song_model.dart';
 import '../services/playlist/playlist_service.dart';
+import '../core/service_locator.dart' as locator;
 import 'songs_provider.dart';
 
 final playlistServiceProvider = Provider<PlaylistService>((ref) {
-  final service = PlaylistService();
-  unawaited(service.init());
-  ref.onDispose(() => service.dispose());
-  return service;
+  return locator.playlistService;
 });
 
 final playlistsProvider = StreamProvider<List<PlaylistModel>>((ref) {
   final service = ref.watch(playlistServiceProvider);
-  return service.playlistsStream;
+  return _seededStream(service.playlists, service.playlistsStream);
 });
+
+/// Emits the current value immediately, then forwards all stream events.
+Stream<List<PlaylistModel>> _seededStream(
+  List<PlaylistModel> currentValue,
+  Stream<List<PlaylistModel>> stream,
+) async* {
+  yield currentValue;
+  yield* stream;
+}
 
 final playlistDetailProvider =
     Provider.family<PlaylistModel?, String>((ref, playlistId) {

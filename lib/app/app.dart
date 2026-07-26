@@ -10,7 +10,9 @@ import '../core/service_locator.dart';
 import '../services/audio/audio_player_service.dart';
 import '../services/audio/audio_handler.dart';
 import '../services/blacklist/blacklist_service.dart';
+import '../services/favorites/favorites_service.dart';
 import '../services/history/history_service.dart';
+import '../services/playlist/playlist_service.dart';
 import '../services/settings/settings_service.dart';
 import '../screens/splash/splash_screen.dart';
 
@@ -44,6 +46,14 @@ class _MusixPlayerAppState extends State<MusixPlayerApp> {
       final blacklistSvc = BlacklistService();
       await blacklistSvc.init();
       blacklistService = blacklistSvc;
+
+      final favoritesSvc = FavoritesService();
+      await favoritesSvc.init();
+      favoritesService = favoritesSvc;
+
+      final playlistSvc = PlaylistService();
+      await playlistSvc.init();
+      playlistService = playlistSvc;
 
       audioService = AudioPlayerService();
       audioService.setBlacklistChecker(blacklistService.isBlacklisted);

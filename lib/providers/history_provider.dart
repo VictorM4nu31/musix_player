@@ -10,8 +10,17 @@ final historyServiceProvider = Provider<HistoryService>((ref) {
 
 final historyProvider = StreamProvider<List<HistoryEntry>>((ref) {
   final service = ref.watch(historyServiceProvider);
-  return service.historyStream;
+  return _seededHistoryStream(service.entries, service.historyStream);
 });
+
+/// Emits the current value immediately, then forwards all stream events.
+Stream<List<HistoryEntry>> _seededHistoryStream(
+  List<HistoryEntry> currentValue,
+  Stream<List<HistoryEntry>> stream,
+) async* {
+  yield currentValue;
+  yield* stream;
+}
 
 final recentSongsProvider = Provider<List<SongModel>>((ref) {
   final historyAsync = ref.watch(historyProvider);
