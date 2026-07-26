@@ -121,36 +121,53 @@ class FavoritesScreen extends ConsumerWidget {
         showModalBottomSheet(
           context: context,
           builder: (ctx) {
+            final maxH = MediaQuery.of(ctx).size.height * 0.65;
             return SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const BottomSheetDragHandle(),
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('Agregar a playlist'),
-                  ),
-                  if (playlists.isEmpty)
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxH),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const BottomSheetDragHandle(),
                     const Padding(
                       padding: EdgeInsets.all(16),
-                      child: Text('No hay playlists creadas'),
-                    )
-                  else
-                    ...playlists.map(
-                      (p) => ListTile(
-                        leading: const Icon(Icons.queue_music_rounded),
-                        title: Text(p.name),
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          playlistService.addSongToPlaylist(p.id, song.id);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Agregado a ${p.name}')),
-                          );
-                        },
+                      child: Text('Agregar a playlist'),
+                    ),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (playlists.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.all(16),
+                                child: Text('No hay playlists creadas'),
+                              )
+                            else
+                              ...playlists.map(
+                                (p) => ListTile(
+                                  leading:
+                                      const Icon(Icons.queue_music_rounded),
+                                  title: Text(p.name),
+                                  onTap: () {
+                                    Navigator.pop(ctx);
+                                    playlistService.addSongToPlaylist(
+                                        p.id, song.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content:
+                                              Text('Agregado a ${p.name}')),
+                                    );
+                                  },
+                                ),
+                              ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
                       ),
                     ),
-                  const SizedBox(height: 16),
-                ],
+                  ],
+                ),
               ),
             );
           },

@@ -6,10 +6,12 @@ Reproductor de música local para Android. Escanea la biblioteca del dispositivo
 
 - Biblioteca local con búsqueda y ordenación
 - Reproducción con notificación y controles de media
-- Mini player + pantalla completa (temas claro/oscuro/pixel art)
+- Mini player + pantalla completa responsive (temas claro/oscuro/pixel art)
+- Animaciones de carátula visibles (vinilo, pulso, ondas, equalizer, minimal)
 - Cola con reordenar y gestos
 - Playlists, favoritos, historial (con umbral de reproducción) y blacklist
 - Edición de metadatos vía MediaStore (no ID3 del archivo)
+- Widgets de pantalla de inicio Android (pequeño / mediano / grande)
 
 ## Stack
 

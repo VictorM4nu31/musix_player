@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Musix Player</string>
+    <string name="widget_description">Controles e información de Musix Player</string>
+    <string name="widget_description_small">Carátula y play/pausa</string>
+    <string name="widget_description_large">Reproductor grande con carátula</string>
+    <string name="widget_default_title">Musix Player</string>
+    <string name="widget_default_artist">Sin reproducción</string>
+    <string name="widget_artwork_desc">Carátula</string>
+    <string name="widget_play_pause">Reproducir o pausar</string>
+    <string name="widget_prev">Anterior</string>
+    <string name="widget_next">Siguiente</string>
+</resources>

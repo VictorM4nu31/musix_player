@@ -15,6 +15,7 @@ import '../services/favorites/favorites_service.dart';
 import '../services/history/history_service.dart';
 import '../services/playlist/playlist_service.dart';
 import '../services/settings/settings_service.dart';
+import '../services/widget/home_widget_service.dart';
 import '../screens/splash/splash_screen.dart';
 
 class MusixPlayerApp extends StatefulWidget {
@@ -42,6 +43,7 @@ class _MusixPlayerAppState extends State<MusixPlayerApp> {
   void dispose() {
     _positionSub?.cancel();
     _songSub?.cancel();
+    homeWidgetService?.dispose();
     super.dispose();
   }
 
@@ -103,6 +105,9 @@ class _MusixPlayerAppState extends State<MusixPlayerApp> {
           androidNotificationIcon: 'mipmap/ic_launcher',
         ),
       );
+
+      homeWidgetService = HomeWidgetService(audioService);
+      await homeWidgetService!.start();
     } catch (e) {
       setState(() => _error = e.toString());
       return;

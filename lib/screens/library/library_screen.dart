@@ -70,40 +70,57 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       context: context,
       builder: (context) {
         final theme = Theme.of(context);
+        final maxH = MediaQuery.of(context).size.height * 0.65;
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const BottomSheetDragHandle(),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Agregar a playlist',
-                  style: theme.textTheme.titleMedium,
-                ),
-              ),
-              if (playlists.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('No hay playlists creadas'),
-                )
-              else
-                ...playlists.map(
-                  (playlist) => ListTile(
-                    leading: const Icon(Icons.queue_music_rounded),
-                    title: Text(playlist.name),
-                    subtitle: Text('${playlist.songIds.length} canciones'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      playlistService.addSongToPlaylist(playlist.id, song.id);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Agregado a ${playlist.name}')),
-                      );
-                    },
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxH),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const BottomSheetDragHandle(),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Agregar a playlist',
+                    style: theme.textTheme.titleMedium,
                   ),
                 ),
-              const SizedBox(height: 16),
-            ],
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (playlists.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Text('No hay playlists creadas'),
+                          )
+                        else
+                          ...playlists.map(
+                            (playlist) => ListTile(
+                              leading: const Icon(Icons.queue_music_rounded),
+                              title: Text(playlist.name),
+                              subtitle:
+                                  Text('${playlist.songIds.length} canciones'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                playlistService.addSongToPlaylist(
+                                    playlist.id, song.id);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content:
+                                          Text('Agregado a ${playlist.name}')),
+                                );
+                              },
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

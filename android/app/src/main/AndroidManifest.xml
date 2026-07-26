@@ -55,6 +55,43 @@
             </intent-filter>
         </receiver>
 
+        <!-- Home screen widgets -->
+        <receiver
+            android:name=".MusixPlayerWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_description">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/musix_player_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".MusixPlayerWidgetSmallProvider"
+            android:exported="true"
+            android:label="@string/widget_description_small">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/musix_player_widget_small_info" />
+        </receiver>
+
+        <receiver
+            android:name=".MusixPlayerWidgetLargeProvider"
+            android:exported="true"
+            android:label="@string/widget_description_large">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/musix_player_widget_large_info" />
+        </receiver>
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

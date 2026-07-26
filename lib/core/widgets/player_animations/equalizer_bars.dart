@@ -1,146 +1,153 @@
-import 'dart:math';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
+/// Equalizer bars rendered below the artwork (always visible).
 class EqualizerBars extends StatefulWidget {
-  const EqualizerBars({super.key, required this.isPlaying, required this.size});
+  const EqualizerBars({
+    super.key,
+    required this.isPlaying,
+    required this.size,
+    required this.child,
+  });
 
   final bool isPlaying;
   final double size;
+  final Widget child;
 
   @override
   State<EqualizerBars> createState() => _EqualizerBarsState();
 }
 
 class _EqualizerBarsState extends State<EqualizerBars>
-    with TickerProviderStateMixin {
-  late List<AnimationController> _controllers;
-  late List<Animation<double>> _animations;
-  final int _barCount = 7;
-  final Random _random = Random();
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  static const _barCount = 5;
+  late final List<double> _phases;
 
   @override
   void initState() {
     super.initState();
-    _controllers = List.generate(
-      _barCount,
-      (i) => AnimationController(
-        vsync: this,
-        duration: Duration(milliseconds: 400 + _random.nextInt(300)),
-      ),
+    _phases = List.generate(_barCount, (i) => i * 0.35);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
     );
-
-    _animations = List.generate(_barCount, (i) {
-      final start = 0.2 + _random.nextDouble() * 0.2;
-      final end = 0.6 + _random.nextDouble() * 0.4;
-      return Tween<double>(begin: start, end: end).animate(
-        CurvedAnimation(parent: _controllers[i], curve: Curves.easeInOut),
-      );
-    });
-
     if (widget.isPlaying) {
-      _startAnimations();
-    }
-  }
-
-  void _startAnimations() {
-    for (int i = 0; i < _barCount; i++) {
-      Future.delayed(Duration(milliseconds: i * 80), () {
-        if (mounted && widget.isPlaying) {
-          _controllers[i].repeat(reverse: true);
-        }
-      });
-    }
-  }
-
-  void _stopAnimations() {
-    for (final c in _controllers) {
-      c.stop();
+      _controller.repeat();
     }
   }
 
   @override
   void didUpdateWidget(EqualizerBars oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isPlaying && !_controllers.first.isAnimating) {
-      _startAnimations();
-    } else if (!widget.isPlaying && _controllers.first.isAnimating) {
-      _stopAnimations();
+    if (widget.isPlaying && !_controller.isAnimating) {
+      _controller.repeat();
+    } else if (!widget.isPlaying && _controller.isAnimating) {
+      _controller.stop();
     }
   }
 
   @override
   void dispose() {
-    for (final c in _controllers) {
-      c.dispose();
-    }
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-    final barWidth = widget.size * 0.08;
-    final totalWidth = _barCount * barWidth + (_barCount - 1) * (barWidth * 0.6);
-    final startX = (widget.size - totalWidth) / 2;
+    final primary = Theme.of(context).colorScheme.primary;
+    final artFraction = 0.78;
+    final artSize = widget.size * artFraction;
 
-    return AnimatedBuilder(
-      animation: Listenable.merge(_controllers),
-      builder: (context, _) {
-        return CustomPaint(
-          size: Size(widget.size, widget.size),
-          painter: _EqualizerPainter(
-            bars: List.generate(_barCount, (i) {
-              return _BarData(
-                x: startX + i * (barWidth + barWidth * 0.6),
-                height: _animations[i].value * widget.size * 0.5,
-                width: barWidth,
-              );
-            }),
-            color: primaryColor,
-            maxHeight: widget.size * 0.5,
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Artwork upper-centered
+        Align(
+          alignment: const Alignment(0, -0.35),
+          child: SizedBox(
+            width: artSize,
+            height: artSize,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(artSize * 0.08),
+              child: widget.child,
+            ),
           ),
-        );
-      },
+        ),
+        // Bars at bottom
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: EdgeInsets.only(bottom: widget.size * 0.04),
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) {
+                return CustomPaint(
+                  size: Size(widget.size * 0.7, widget.size * 0.18),
+                  painter: _EqPainter(
+                    color: primary,
+                    progress: _controller.value,
+                    isPlaying: widget.isPlaying,
+                    phases: _phases,
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _BarData {
-  final double x;
-  final double height;
-  final double width;
-
-  _BarData({required this.x, required this.height, required this.width});
-}
-
-class _EqualizerPainter extends CustomPainter {
-  _EqualizerPainter({
-    required this.bars,
+class _EqPainter extends CustomPainter {
+  _EqPainter({
     required this.color,
-    required this.maxHeight,
+    required this.progress,
+    required this.isPlaying,
+    required this.phases,
   });
 
-  final List<_BarData> bars;
   final Color color;
-  final double maxHeight;
+  final double progress;
+  final bool isPlaying;
+  final List<double> phases;
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
-    final centerY = size.height / 2;
+    final n = phases.length;
+    final gap = size.width * 0.06;
+    final barW = (size.width - gap * (n - 1)) / n;
+    final maxH = size.height;
 
-    for (final bar in bars) {
-      final topY = centerY - bar.height / 2;
-      final rect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(bar.x, topY, bar.width, bar.height),
-        const Radius.circular(4),
+    for (var i = 0; i < n; i++) {
+      final wave = isPlaying
+          ? (0.35 +
+              0.65 *
+                  (0.5 +
+                      0.5 *
+                          math.sin(
+                            (progress + phases[i]) * 2 * math.pi,
+                          )))
+          : 0.22;
+      final h = maxH * wave;
+      final x = i * (barW + gap);
+      final y = maxH - h;
+      paint.color = color.withAlpha(isPlaying ? 200 : 90);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(x, y, barW, h),
+          const Radius.circular(4),
+        ),
+        paint,
       );
-      paint.color = color.withAlpha(180);
-      canvas.drawRRect(rect, paint);
     }
   }
 
   @override
-  bool shouldRepaint(_EqualizerPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _EqPainter oldDelegate) =>
+      progress != oldDelegate.progress ||
+      isPlaying != oldDelegate.isPlaying ||
+      color != oldDelegate.color;
 }
