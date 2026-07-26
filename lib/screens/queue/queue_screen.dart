@@ -10,7 +10,7 @@ class QueueScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final queueAsync = ref.watch(queueProvider);
-    final currentIndex = ref.watch(currentIndexProvider);
+    final currentIndex = ref.watch(currentIndexProvider).valueOrNull ?? -1;
     final audioService = ref.read(audioPlayerServiceProvider);
     final theme = Theme.of(context);
 
@@ -20,9 +20,7 @@ class QueueScreen extends ConsumerWidget {
         actions: [
           if (queueAsync.hasValue && queueAsync.value!.isNotEmpty)
             TextButton(
-              onPressed: () {
-                audioService.clearQueue();
-              },
+              onPressed: () => _confirmClear(context, audioService),
               child: Text(
                 'Vaciar',
                 style: TextStyle(color: theme.colorScheme.error),
@@ -45,10 +43,7 @@ class QueueScreen extends ConsumerWidget {
                     color: theme.colorScheme.primary.withAlpha(80),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    'Cola vacía',
-                    style: theme.textTheme.titleLarge,
-                  ),
+                  Text('Cola vacía', style: theme.textTheme.titleLarge),
                   const SizedBox(height: 8),
                   Text(
                     'Agrega canciones desde la biblioteca',
@@ -62,8 +57,7 @@ class QueueScreen extends ConsumerWidget {
           return ReorderableListView.builder(
             padding: const EdgeInsets.only(bottom: 80),
             itemCount: queue.length,
-            // ignore: deprecated_member_use
-            onReorder: (oldIndex, newIndex) {
+            onReorderItem: (oldIndex, newIndex) {
               audioService.reorderQueue(oldIndex, newIndex);
             },
             itemBuilder: (context, index) {
@@ -75,16 +69,40 @@ class QueueScreen extends ConsumerWidget {
                 song: song,
                 index: index,
                 isCurrentSong: isCurrentSong,
-                onTap: () {
-                  audioService.play(song);
-                },
-                onRemove: () {
-                  audioService.removeFromQueue(index);
-                },
+                onTap: () => audioService.seekToIndex(index),
+                onRemove: () => audioService.removeFromQueue(index),
               );
             },
           );
         },
+      ),
+    );
+  }
+
+  void _confirmClear(BuildContext context, dynamic audioService) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Vaciar cola'),
+        content: const Text(
+          '¿Quieres eliminar todas las canciones de la cola?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              audioService.clearQueue();
+              Navigator.pop(context);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Vaciar'),
+          ),
+        ],
       ),
     );
   }
@@ -122,10 +140,7 @@ class _QueueTile extends StatelessWidget {
           color: theme.colorScheme.error,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(
-          Icons.delete_rounded,
-          color: Colors.white,
-        ),
+        child: const Icon(Icons.delete_rounded, color: Colors.white),
       ),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),

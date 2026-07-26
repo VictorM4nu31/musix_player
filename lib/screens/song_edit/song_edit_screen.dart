@@ -19,7 +19,6 @@ class _SongEditScreenState extends ConsumerState<SongEditScreen> {
   late TextEditingController _titleController;
   late TextEditingController _artistController;
   late TextEditingController _albumController;
-  late TextEditingController _genreController;
   late TextEditingController _yearController;
   late TextEditingController _trackController;
   bool _isSaving = false;
@@ -31,7 +30,6 @@ class _SongEditScreenState extends ConsumerState<SongEditScreen> {
     _titleController = TextEditingController();
     _artistController = TextEditingController();
     _albumController = TextEditingController();
-    _genreController = TextEditingController();
     _yearController = TextEditingController();
     _trackController = TextEditingController();
   }
@@ -41,21 +39,24 @@ class _SongEditScreenState extends ConsumerState<SongEditScreen> {
     _titleController.dispose();
     _artistController.dispose();
     _albumController.dispose();
-    _genreController.dispose();
     _yearController.dispose();
     _trackController.dispose();
     super.dispose();
   }
 
-  void _loadSong(List<SongModel> songs) {
+  void _loadSong(WidgetRef ref, List<SongModel> songs) {
     if (_song != null) return;
-    final song = songs.where((s) => s.id == widget.songId).firstOrNull;
+    SongModel? song = songs.where((s) => s.id == widget.songId).firstOrNull;
+    song ??= ref
+        .read(songRepositoryProvider)
+        .cachedSongs
+        .where((s) => s.id == widget.songId)
+        .firstOrNull;
     if (song != null) {
       _song = song;
       _titleController.text = song.title;
       _artistController.text = song.artist;
       _albumController.text = song.album;
-      _genreController.text = song.genre ?? '';
       _yearController.text = song.year > 0 ? song.year.toString() : '';
       _trackController.text = song.track > 0 ? song.track.toString() : '';
     }
@@ -88,9 +89,6 @@ class _SongEditScreenState extends ConsumerState<SongEditScreen> {
             title: _titleController.text.trim(),
             artist: _artistController.text.trim(),
             album: _albumController.text.trim(),
-            genre: _genreController.text.trim().isEmpty
-                ? null
-                : _genreController.text.trim(),
             year: int.tryParse(_yearController.text.trim()) ?? 0,
             track: int.tryParse(_trackController.text.trim()) ?? 0,
           );
@@ -102,13 +100,19 @@ class _SongEditScreenState extends ConsumerState<SongEditScreen> {
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Metadatos actualizados')),
+          const SnackBar(
+            content: Text(
+              'Metadatos actualizados en la biblioteca del sistema',
+            ),
+          ),
         );
         Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Error al guardar los metadatos'),
+            content: Text(
+              'No se pudieron guardar. En algunos dispositivos solo se puede editar la base MediaStore, no las etiquetas del archivo.',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -141,7 +145,7 @@ class _SongEditScreenState extends ConsumerState<SongEditScreen> {
         body: Center(child: Text('Error: $e')),
       ),
       data: (songs) {
-        _loadSong(songs);
+        _loadSong(ref, songs);
         if (_song == null) {
           return Scaffold(
             appBar: AppBar(title: const Text('Editar información')),
@@ -186,7 +190,7 @@ class _SongEditScreenState extends ConsumerState<SongEditScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'La portada del álbum no es modificable desde esta aplicación.',
+                          'Los cambios se aplican a la biblioteca del sistema (MediaStore), no necesariamente a las etiquetas ID3 del archivo. La portada no es editable aquí.',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.primary,
                           ),
@@ -202,13 +206,19 @@ class _SongEditScreenState extends ConsumerState<SongEditScreen> {
                 const SizedBox(height: 14),
                 _buildField('Álbum', _albumController, theme),
                 const SizedBox(height: 14),
-                _buildField('Género', _genreController, theme),
+                _buildField(
+                  'Año',
+                  _yearController,
+                  theme,
+                  keyboardType: TextInputType.number,
+                ),
                 const SizedBox(height: 14),
-                _buildField('Año', _yearController, theme,
-                    keyboardType: TextInputType.number),
-                const SizedBox(height: 14),
-                _buildField('Número de pista', _trackController, theme,
-                    keyboardType: TextInputType.number),
+                _buildField(
+                  'Número de pista',
+                  _trackController,
+                  theme,
+                  keyboardType: TextInputType.number,
+                ),
               ],
             ),
           ),

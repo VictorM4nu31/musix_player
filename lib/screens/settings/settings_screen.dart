@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/widgets/bottom_sheet_drag_handle.dart';
 import '../../core/widgets/player_animations/animation_type.dart';
 import '../../providers/blacklist_provider.dart';
 import '../../providers/history_provider.dart';
 import '../../providers/settings_provider.dart';
-import '../../core/service_locator.dart';
+import '../../providers/songs_provider.dart';
 import '../../services/settings/settings_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -14,8 +16,12 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final themeMode = ref.watch(currentThemeModeProvider);
-    final sortPreference = ref.watch(sortPreferenceProvider);
+    final themePref =
+        ref.watch(themePreferenceProvider).valueOrNull ?? ThemePreference.system;
+    final sortPreference =
+        ref.watch(sortPreferenceProvider).valueOrNull ?? SortPreference.title;
+    final animation = ref.watch(playerAnimationProvider).valueOrNull ??
+        PlayerAnimationType.vinyl;
 
     return Scaffold(
       appBar: AppBar(
@@ -31,8 +37,8 @@ class SettingsScreen extends ConsumerWidget {
               _SettingsTile(
                 icon: Icons.dark_mode_rounded,
                 title: 'Tema',
-                subtitle: _getThemeName(themeMode),
-                onTap: () => _showThemeDialog(context, ref, themeMode),
+                subtitle: _getThemeName(themePref),
+                onTap: () => _showThemeDialog(context, ref, themePref),
               ),
             ],
           ),
@@ -50,14 +56,20 @@ class SettingsScreen extends ConsumerWidget {
               _SettingsTile(
                 icon: Icons.animation_rounded,
                 title: 'Animación del reproductor',
-                subtitle: _getAnimationName(settingsService.playerAnimation),
-                onTap: () => _showAnimationDialog(context, ref),
+                subtitle: _getAnimationName(animation),
+                onTap: () => _showAnimationDialog(context, ref, animation),
               ),
               _SettingsTile(
                 icon: Icons.block_rounded,
                 title: 'Lista negra',
                 subtitle: _getBlacklistCount(ref),
                 onTap: () => context.push('/blacklist'),
+              ),
+              _SettingsTile(
+                icon: Icons.history_rounded,
+                title: 'Historial',
+                subtitle: 'Canciones reproducidas recientemente',
+                onTap: () => context.push('/history'),
               ),
             ],
           ),
@@ -67,7 +79,7 @@ class SettingsScreen extends ConsumerWidget {
             title: 'Datos',
             children: [
               _SettingsTile(
-                icon: Icons.history_rounded,
+                icon: Icons.delete_sweep_rounded,
                 title: 'Limpiar historial',
                 subtitle: 'Eliminar todo el historial de reproducción',
                 onTap: () => _showClearHistoryDialog(context, ref),
@@ -81,8 +93,8 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               _SettingsTile(
                 icon: Icons.info_outline_rounded,
-                title: 'Musix Player',
-                subtitle: 'Versión 1.0.0',
+                title: AppConstants.appName,
+                subtitle: 'Versión ${AppConstants.appVersion}',
                 onTap: () {},
               ),
             ],
@@ -93,16 +105,16 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  String _getThemeName(ThemeMode mode) {
-    final pref = settingsService.themePreference;
-    if (pref == ThemePreference.pixelArt) return 'Pixel Art';
-    switch (mode) {
-      case ThemeMode.light:
+  String _getThemeName(ThemePreference pref) {
+    switch (pref) {
+      case ThemePreference.light:
         return 'Claro';
-      case ThemeMode.dark:
+      case ThemePreference.dark:
         return 'Oscuro';
-      case ThemeMode.system:
+      case ThemePreference.system:
         return 'Sistema';
+      case ThemePreference.pixelArt:
+        return 'Pixel Art';
     }
   }
 
@@ -116,8 +128,6 @@ class SettingsScreen extends ConsumerWidget {
         return 'Por álbum';
       case SortPreference.duration:
         return 'Por duración';
-      case SortPreference.dateAdded:
-        return 'Por fecha';
     }
   }
 
@@ -145,8 +155,12 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-  void _showAnimationDialog(BuildContext context, WidgetRef ref) {
-    final current = settingsService.playerAnimation;
+  void _showAnimationDialog(
+    BuildContext context,
+    WidgetRef ref,
+    PlayerAnimationType current,
+  ) {
+    final settings = ref.read(settingsServiceProvider);
 
     showDialog(
       context: context,
@@ -157,7 +171,7 @@ class SettingsScreen extends ConsumerWidget {
             title: _getAnimationName(type),
             isSelected: current == type,
             onTap: () {
-              settingsService.setPlayerAnimation(type);
+              settings.setPlayerAnimation(type);
               Navigator.pop(context);
             },
           );
@@ -169,9 +183,9 @@ class SettingsScreen extends ConsumerWidget {
   void _showThemeDialog(
     BuildContext context,
     WidgetRef ref,
-    ThemeMode currentMode,
+    ThemePreference currentPref,
   ) {
-    final currentPref = settingsService.themePreference;
+    final settings = ref.read(settingsServiceProvider);
 
     showModalBottomSheet(
       context: context,
@@ -184,21 +198,9 @@ class SettingsScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.onSurfaceVariant.withAlpha(80),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
+                const Center(child: BottomSheetDragHandle()),
                 const SizedBox(height: 20),
-                Text(
-                  'Seleccionar tema',
-                  style: theme.textTheme.titleLarge,
-                ),
+                Text('Seleccionar tema', style: theme.textTheme.titleLarge),
                 const SizedBox(height: 20),
                 Row(
                   children: [
@@ -213,7 +215,7 @@ class SettingsScreen extends ConsumerWidget {
                           Color(0xFF1A1B4B),
                         ],
                         onTap: () {
-                          settingsService.setThemePreference(ThemePreference.system);
+                          settings.setThemePreference(ThemePreference.system);
                           Navigator.pop(context);
                         },
                       ),
@@ -230,7 +232,7 @@ class SettingsScreen extends ConsumerWidget {
                           Color(0xFF1A1B4B),
                         ],
                         onTap: () {
-                          settingsService.setThemePreference(ThemePreference.light);
+                          settings.setThemePreference(ThemePreference.light);
                           Navigator.pop(context);
                         },
                       ),
@@ -247,7 +249,7 @@ class SettingsScreen extends ConsumerWidget {
                           Color(0xFFE8E9F3),
                         ],
                         onTap: () {
-                          settingsService.setThemePreference(ThemePreference.dark);
+                          settings.setThemePreference(ThemePreference.dark);
                           Navigator.pop(context);
                         },
                       ),
@@ -268,7 +270,7 @@ class SettingsScreen extends ConsumerWidget {
                           Color(0xFFE6EDF3),
                         ],
                         onTap: () {
-                          settingsService.setThemePreference(ThemePreference.pixelArt);
+                          settings.setThemePreference(ThemePreference.pixelArt);
                           Navigator.pop(context);
                         },
                       ),
@@ -289,7 +291,7 @@ class SettingsScreen extends ConsumerWidget {
     WidgetRef ref,
     SortPreference currentSort,
   ) {
-    final settingsService = ref.read(settingsServiceProvider);
+    final settings = ref.read(settingsServiceProvider);
 
     showDialog(
       context: context,
@@ -300,7 +302,10 @@ class SettingsScreen extends ConsumerWidget {
             title: _getSortName(sort),
             isSelected: currentSort == sort,
             onTap: () {
-              settingsService.setSortPreference(sort);
+              settings.setSortPreference(sort);
+              ref.read(songsProvider.notifier).setSortOption(
+                    sortOptionFromPreference(sort),
+                  );
               Navigator.pop(context);
             },
           );
@@ -340,7 +345,8 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSection(ThemeData theme, {
+  Widget _buildSection(
+    ThemeData theme, {
     required String title,
     required List<Widget> children,
   }) {
@@ -434,9 +440,7 @@ class _ThemePreviewCard extends StatelessWidget {
           color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected
-                ? theme.colorScheme.primary
-                : theme.dividerColor,
+            color: isSelected ? theme.colorScheme.primary : theme.dividerColor,
             width: isSelected ? 2.5 : 1,
           ),
           boxShadow: isSelected
@@ -476,9 +480,7 @@ class _ThemePreviewCard extends StatelessWidget {
               label,
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : null,
+                color: isSelected ? theme.colorScheme.primary : null,
               ),
               textAlign: TextAlign.center,
             ),
@@ -526,10 +528,7 @@ class _SortOption extends StatelessWidget {
           ),
           if (isSelected) ...[
             const Spacer(),
-            Icon(
-              Icons.check_rounded,
-              color: theme.colorScheme.primary,
-            ),
+            Icon(Icons.check_rounded, color: theme.colorScheme.primary),
           ],
         ],
       ),

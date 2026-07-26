@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/widgets/bottom_sheet_drag_handle.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
 import '../../core/widgets/loading_indicator.dart';
@@ -11,8 +12,10 @@ import '../../providers/audio_provider.dart';
 import '../../providers/blacklist_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/playlist_provider.dart';
-import '../../services/playlist/playlist_service.dart';
+import '../../providers/settings_provider.dart';
 import '../../providers/songs_provider.dart';
+import '../../services/playlist/playlist_service.dart';
+import '../../services/settings/settings_service.dart';
 import 'widgets/library_search_bar.dart';
 import 'widgets/library_sort_menu.dart';
 
@@ -36,7 +39,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     BuildContext context,
     WidgetRef ref,
     SongModel song,
-    List<SongModel> songs,
   ) {
     final favoritesService = ref.read(favoritesServiceProvider);
     final isFavorite = favoritesService.isFavorite(song.id);
@@ -72,15 +74,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurfaceVariant.withAlpha(80),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+              const BottomSheetDragHandle(),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
@@ -101,16 +95,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     subtitle: Text('${playlist.songIds.length} canciones'),
                     onTap: () {
                       Navigator.pop(context);
-                      playlistService.addSongToPlaylist(
-                        playlist.id,
-                        song.id,
-                      );
+                      playlistService.addSongToPlaylist(playlist.id, song.id);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Agregado a ${playlist.name}',
-                          ),
-                        ),
+                        SnackBar(content: Text('Agregado a ${playlist.name}')),
                       );
                     },
                   ),
@@ -123,10 +110,25 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 
+  Future<void> _handlePermissionAction() async {
+    final repo = ref.read(songRepositoryProvider);
+    final granted = await repo.hasPermission();
+    if (!granted) {
+      await repo.openSettings();
+    }
+    await ref.read(songsProvider.notifier).loadSongs(forceRefresh: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     final songsState = ref.watch(songsProvider);
     final songsNotifier = ref.read(songsProvider.notifier);
+
+    ref.listen(sortPreferenceProvider, (prev, next) {
+      next.whenData((pref) {
+        songsNotifier.setSortOption(sortOptionFromPreference(pref));
+      });
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -134,7 +136,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         actions: [
           LibrarySortMenu(
             currentOption: songsNotifier.sortOption,
-            onChanged: songsNotifier.setSortOption,
+            onChanged: (option) {
+              songsNotifier.setSortOption(option);
+              final pref = switch (option) {
+                SongSortOption.title => SortPreference.title,
+                SongSortOption.artist => SortPreference.artist,
+                SongSortOption.album => SortPreference.album,
+                SongSortOption.duration => SortPreference.duration,
+              };
+              ref.read(settingsServiceProvider).setSortPreference(pref);
+            },
           ),
           IconButton(
             onPressed: () => songsNotifier.loadSongs(forceRefresh: true),
@@ -161,15 +172,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     icon: Icons.lock_outline_rounded,
                     title: 'Permiso requerido',
                     subtitle:
-                        'Necesitamos acceso a tu música para mostrar tu biblioteca',
-                    actionLabel: 'Conceder permiso',
-                    onAction: () => songsNotifier.loadSongs(forceRefresh: true),
+                        'Necesitamos acceso a tu música. Si lo denegaste, ábrelo en Ajustes del sistema.',
+                    actionLabel: 'Conceder / Abrir ajustes',
+                    onAction: _handlePermissionAction,
                   );
                 }
                 return ErrorView(
                   message: message,
-                  onRetry: () =>
-                      songsNotifier.loadSongs(forceRefresh: true),
+                  onRetry: () => songsNotifier.loadSongs(forceRefresh: true),
                 );
               },
               data: (songs) {
@@ -221,22 +231,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               album: song.album,
                               duration: song.duration,
                               artworkUri: song.artworkUri,
+                              albumId: song.albumId,
                               onTap: () {
                                 final audioService =
                                     ref.read(audioPlayerServiceProvider);
-                                audioService.play(
-                                  song,
-                                  playlist: songs,
-                                );
+                                audioService.play(song, playlist: songs);
                                 context.push('/player');
                               },
                               onMorePressed: () {
-                                _showSongContextMenu(
-                                  context,
-                                  ref,
-                                  song,
-                                  songs,
-                                );
+                                _showSongContextMenu(context, ref, song);
                               },
                             );
                           },

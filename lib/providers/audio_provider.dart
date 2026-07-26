@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio/just_audio.dart';
+import '../core/utils/seeded_stream.dart';
 import '../data/models/song_model.dart';
 import '../services/audio/audio_player_service.dart';
 import '../services/audio/audio_handler.dart';
@@ -14,7 +16,7 @@ final audioHandlerProvider = Provider<MusixAudioHandler>((ref) {
 
 final currentSongProvider = StreamProvider<SongModel?>((ref) {
   final audioService = ref.watch(audioPlayerServiceProvider);
-  return audioService.currentSongStream;
+  return seededStream(audioService.currentSong, audioService.currentSongStream);
 });
 
 final isPlayingProvider = StreamProvider<bool>((ref) {
@@ -34,10 +36,26 @@ final durationProvider = StreamProvider<Duration?>((ref) {
 
 final queueProvider = StreamProvider<List<SongModel>>((ref) {
   final audioService = ref.watch(audioPlayerServiceProvider);
-  return audioService.queueStream;
+  return seededStream(audioService.queue, audioService.queueStream);
 });
 
-final currentIndexProvider = Provider<int>((ref) {
+final currentIndexProvider = StreamProvider<int>((ref) {
   final audioService = ref.watch(audioPlayerServiceProvider);
-  return audioService.currentIndex;
+  return seededStream(
+    audioService.currentIndex,
+    audioService.currentIndexStream,
+  );
+});
+
+final shuffleModeProvider = StreamProvider<bool>((ref) {
+  final audioService = ref.watch(audioPlayerServiceProvider);
+  return seededStream(
+    audioService.isShuffleMode,
+    audioService.shuffleModeStream,
+  );
+});
+
+final loopModeProvider = StreamProvider<LoopMode>((ref) {
+  final audioService = ref.watch(audioPlayerServiceProvider);
+  return seededStream(audioService.loopMode, audioService.loopModeStream);
 });

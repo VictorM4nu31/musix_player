@@ -8,7 +8,9 @@ import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
 import '../../providers/blacklist_provider.dart';
 import '../../providers/favorites_provider.dart';
+import '../../providers/playlist_provider.dart';
 import '../../services/favorites/favorites_service.dart';
+import '../../core/widgets/bottom_sheet_drag_handle.dart';
 
 class FavoritesScreen extends ConsumerWidget {
   const FavoritesScreen({super.key});
@@ -64,6 +66,7 @@ class FavoritesScreen extends ConsumerWidget {
                       album: song.album,
                       duration: song.duration,
                       artworkUri: song.artworkUri,
+                      albumId: song.albumId,
                       onTap: () {
                         audioService.play(
                           song,
@@ -102,6 +105,8 @@ class FavoritesScreen extends ConsumerWidget {
     final blacklistService = ref.read(blacklistServiceProvider);
     final isBlacklisted = blacklistService.isBlacklisted(song.id);
 
+    final playlistService = ref.read(playlistServiceProvider);
+
     SongContextMenu.show(
       context: context,
       song: song,
@@ -111,6 +116,46 @@ class FavoritesScreen extends ConsumerWidget {
       onToggleBlacklist: () => blacklistService.toggleBlacklist(song.id),
       onAddToQueue: () => ref.read(audioPlayerServiceProvider).addToQueue(song),
       onPlayNext: () => ref.read(audioPlayerServiceProvider).addNext(song),
+      onAddToPlaylist: () {
+        final playlists = playlistService.playlists;
+        showModalBottomSheet(
+          context: context,
+          builder: (ctx) {
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const BottomSheetDragHandle(),
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text('Agregar a playlist'),
+                  ),
+                  if (playlists.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('No hay playlists creadas'),
+                    )
+                  else
+                    ...playlists.map(
+                      (p) => ListTile(
+                        leading: const Icon(Icons.queue_music_rounded),
+                        title: Text(p.name),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          playlistService.addSongToPlaylist(p.id, song.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Agregado a ${p.name}')),
+                          );
+                        },
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

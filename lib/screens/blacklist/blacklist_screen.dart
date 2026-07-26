@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/widgets/bottom_sheet_drag_handle.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/song_tile.dart';
+import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
 import '../../providers/blacklist_provider.dart';
+import '../../services/blacklist/blacklist_service.dart';
 
 class BlacklistScreen extends ConsumerWidget {
   const BlacklistScreen({super.key});
@@ -71,6 +74,7 @@ class BlacklistScreen extends ConsumerWidget {
                       album: song.album,
                       duration: song.duration,
                       artworkUri: song.artworkUri,
+                      albumId: song.albumId,
                       onTap: () {
                         audioService.play(song);
                         context.push('/player');
@@ -97,7 +101,7 @@ class BlacklistScreen extends ConsumerWidget {
   void _showClearDialog(
     BuildContext context,
     WidgetRef ref,
-    dynamic blacklistService,
+    BlacklistService blacklistService,
   ) {
     showDialog(
       context: context,
@@ -129,8 +133,8 @@ class BlacklistScreen extends ConsumerWidget {
   void _showSongContextMenu(
     BuildContext context,
     WidgetRef ref,
-    dynamic song,
-    dynamic blacklistService,
+    SongModel song,
+    BlacklistService blacklistService,
   ) {
     showModalBottomSheet(
       context: context,
@@ -140,15 +144,7 @@ class BlacklistScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurfaceVariant.withAlpha(80),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+              const BottomSheetDragHandle(),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(

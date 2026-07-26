@@ -10,8 +10,8 @@ import '../../core/widgets/player_animations/player_animation_wrapper.dart';
 import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
 import '../../providers/favorites_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../services/audio/audio_player_service.dart';
-import '../../core/service_locator.dart';
 
 class PlayerScreen extends ConsumerWidget {
   const PlayerScreen({super.key});
@@ -23,6 +23,10 @@ class PlayerScreen extends ConsumerWidget {
     final position = ref.watch(positionProvider);
     final duration = ref.watch(durationProvider);
     final audioService = ref.read(audioPlayerServiceProvider);
+    final shuffle = ref.watch(shuffleModeProvider).valueOrNull ?? false;
+    final loopMode = ref.watch(loopModeProvider).valueOrNull ?? LoopMode.off;
+    final animationType = ref.watch(playerAnimationProvider).valueOrNull ??
+        PlayerAnimationType.vinyl;
 
     return Scaffold(
       body: currentSong.when(
@@ -36,6 +40,9 @@ class PlayerScreen extends ConsumerWidget {
             position: position.valueOrNull ?? Duration.zero,
             duration: duration.valueOrNull,
             audioService: audioService,
+            isShuffle: shuffle,
+            loopMode: loopMode,
+            animationType: animationType,
           );
         },
       ),
@@ -43,13 +50,16 @@ class PlayerScreen extends ConsumerWidget {
   }
 }
 
-class _PlayerContent extends ConsumerStatefulWidget {
+class _PlayerContent extends ConsumerWidget {
   const _PlayerContent({
     required this.song,
     required this.isPlaying,
     required this.position,
     required this.duration,
     required this.audioService,
+    required this.isShuffle,
+    required this.loopMode,
+    required this.animationType,
   });
 
   final SongModel song;
@@ -57,35 +67,15 @@ class _PlayerContent extends ConsumerStatefulWidget {
   final Duration position;
   final Duration? duration;
   final AudioPlayerService audioService;
+  final bool isShuffle;
+  final LoopMode loopMode;
+  final PlayerAnimationType animationType;
 
   @override
-  ConsumerState<_PlayerContent> createState() => _PlayerContentState();
-}
-
-class _PlayerContentState extends ConsumerState<_PlayerContent>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _playPauseController;
-
-  @override
-  void initState() {
-    super.initState();
-    _playPauseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
-  }
-
-  @override
-  void dispose() {
-    _playPauseController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isFavorite = ref.watch(isFavoriteProvider(widget.song.id));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFavorite = ref.watch(isFavoriteProvider(song.id));
     final theme = Theme.of(context);
-    final totalDuration = widget.duration ?? widget.song.duration;
+    final totalDuration = duration ?? song.duration;
 
     return Container(
       decoration: BoxDecoration(
@@ -119,12 +109,18 @@ class _PlayerContentState extends ConsumerState<_PlayerContent>
     );
   }
 
-  Widget _buildAppBar(BuildContext context, WidgetRef ref, ThemeData theme, bool isFavorite) {
+  Widget _buildAppBar(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeData theme,
+    bool isFavorite,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
         children: [
           IconButton(
+            tooltip: 'Cerrar',
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 32),
           ),
@@ -141,13 +137,12 @@ class _PlayerContentState extends ConsumerState<_PlayerContent>
             isFavorite: isFavorite,
             size: 28,
             onChanged: (_) {
-              ref.read(favoritesServiceProvider).toggleFavorite(widget.song.id);
+              ref.read(favoritesServiceProvider).toggleFavorite(song.id);
             },
           ),
           IconButton(
-            onPressed: () {
-              context.push('/queue');
-            },
+            tooltip: 'Cola',
+            onPressed: () => context.push('/queue'),
             icon: const Icon(Icons.queue_music_rounded),
           ),
         ],
@@ -156,15 +151,13 @@ class _PlayerContentState extends ConsumerState<_PlayerContent>
   }
 
   Widget _buildArtwork(ThemeData theme) {
-    final animationType = settingsService.playerAnimation;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: AspectRatio(
         aspectRatio: 1,
         child: PlayerAnimationWrapper(
           animationType: animationType,
-          isPlaying: widget.isPlaying,
+          isPlaying: isPlaying,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             transitionBuilder: (child, animation) {
@@ -177,11 +170,12 @@ class _PlayerContentState extends ConsumerState<_PlayerContent>
               );
             },
             child: ArtworkImage(
-              key: ValueKey(widget.song.id),
-              imageUri: widget.song.artworkUri,
-              albumId: widget.song.albumId,
+              key: ValueKey(song.id),
+              imageUri: song.artworkUri,
+              albumId: song.albumId,
               size: double.infinity,
-              borderRadius: animationType == PlayerAnimationType.vinyl ? 999 : 24,
+              borderRadius:
+                  animationType == PlayerAnimationType.vinyl ? 999 : 24,
             ),
           ),
         ),
@@ -196,21 +190,9 @@ class _PlayerContentState extends ConsumerState<_PlayerContent>
         children: [
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),
-            transitionBuilder: (child, animation) {
-              return FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.1),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: child,
-                ),
-              );
-            },
             child: Text(
-              widget.song.title,
-              key: ValueKey('title_${widget.song.id}'),
+              song.title,
+              key: ValueKey('title_${song.id}'),
               style: theme.textTheme.headlineMedium,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -220,15 +202,9 @@ class _PlayerContentState extends ConsumerState<_PlayerContent>
           const SizedBox(height: 4),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),
-            transitionBuilder: (child, animation) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
             child: Text(
-              widget.song.artist,
-              key: ValueKey('artist_${widget.song.id}'),
+              song.artist,
+              key: ValueKey('artist_${song.id}'),
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.textTheme.bodyMedium?.color,
               ),
@@ -243,6 +219,12 @@ class _PlayerContentState extends ConsumerState<_PlayerContent>
   }
 
   Widget _buildProgressBar(ThemeData theme, Duration totalDuration) {
+    final maxMs = totalDuration.inMilliseconds <= 0
+        ? 1.0
+        : totalDuration.inMilliseconds.toDouble();
+    final raw = position.inMilliseconds.toDouble();
+    final value = raw < 0 ? 0.0 : (raw > maxMs ? maxMs : raw);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: SliderTheme(
@@ -255,19 +237,13 @@ class _PlayerContentState extends ConsumerState<_PlayerContent>
           thumbColor: theme.colorScheme.primary,
           overlayColor: theme.colorScheme.primary.withAlpha(30),
         ),
-          child: Slider(
-            value: widget.position.inMilliseconds.toDouble().clamp(
-                  0,
-                  totalDuration.inMilliseconds.toDouble(),
-                ),
-            max: totalDuration.inMilliseconds.toDouble().clamp(
-              1,
-              double.infinity,
-            ),
-            onChanged: (value) {
-              widget.audioService.seek(Duration(milliseconds: value.toInt()));
-            },
-          ),
+        child: Slider(
+          value: value,
+          max: maxMs,
+          onChanged: (v) {
+            audioService.seek(Duration(milliseconds: v.toInt()));
+          },
+        ),
       ),
     );
   }
@@ -279,7 +255,7 @@ class _PlayerContentState extends ConsumerState<_PlayerContent>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            Formatters.formatDurationShort(widget.position),
+            Formatters.formatDurationShort(position),
             style: theme.textTheme.bodySmall,
           ),
           Text(
@@ -299,45 +275,43 @@ class _PlayerContentState extends ConsumerState<_PlayerContent>
         children: [
           _ControlButton(
             icon: Icons.shuffle_rounded,
-            isActive: widget.audioService.isShuffleMode,
+            isActive: isShuffle,
             size: 28,
-            onTap: () => widget.audioService.toggleShuffle(),
+            tooltip: 'Aleatorio',
+            onTap: () => audioService.toggleShuffle(),
           ),
           _ControlButton(
             icon: Icons.skip_previous_rounded,
             size: 36,
-            onTap: () => widget.audioService.seekToPrevious(),
+            tooltip: 'Anterior',
+            onTap: () => audioService.seekToPrevious(),
           ),
-          _PlayPauseButton(
-            isPlaying: widget.isPlaying,
-            onTap: () {
-              _playPauseController.forward().then((_) {
-                _playPauseController.reverse();
-                widget.audioService.togglePlayPause();
-              });
-            },
+          Semantics(
+            button: true,
+            label: isPlaying ? 'Pausar' : 'Reproducir',
+            child: _PlayPauseButton(
+              isPlaying: isPlaying,
+              onTap: () => audioService.togglePlayPause(),
+            ),
           ),
           _ControlButton(
             icon: Icons.skip_next_rounded,
             size: 36,
-            onTap: () => widget.audioService.seekToNext(),
+            tooltip: 'Siguiente',
+            onTap: () => audioService.seekToNext(),
           ),
           _ControlButton(
-            icon: _getLoopIcon(widget.audioService.loopMode),
-            isActive: widget.audioService.loopMode != LoopMode.off,
+            icon: loopMode == LoopMode.one
+                ? Icons.repeat_one_rounded
+                : Icons.repeat_rounded,
+            isActive: loopMode != LoopMode.off,
             size: 28,
-            onTap: () => widget.audioService.cycleLoopMode(),
+            tooltip: 'Repetir',
+            onTap: () => audioService.cycleLoopMode(),
           ),
         ],
       ),
     );
-  }
-
-  IconData _getLoopIcon(LoopMode loopMode) {
-    if (loopMode == LoopMode.one) {
-      return Icons.repeat_one_rounded;
-    }
-    return Icons.repeat_rounded;
   }
 }
 
@@ -386,18 +360,21 @@ class _ControlButton extends StatelessWidget {
     required this.onTap,
     this.isActive = false,
     this.size = 24,
+    this.tooltip,
   });
 
   final IconData icon;
   final VoidCallback onTap;
   final bool isActive;
   final double size;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return IconButton(
+      tooltip: tooltip,
       onPressed: onTap,
       icon: Icon(icon),
       iconSize: size,

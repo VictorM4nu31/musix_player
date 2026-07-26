@@ -77,6 +77,7 @@ class HistoryScreen extends ConsumerWidget {
                       album: song.album,
                       duration: song.duration,
                       artworkUri: song.artworkUri,
+                      albumId: song.albumId,
                       onTap: () {
                         final songs = entries.map((e) => e.song).toList();
                         audioService.play(song, playlist: songs);

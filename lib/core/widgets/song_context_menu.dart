@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/song_model.dart';
+import 'bottom_sheet_drag_handle.dart';
 
 class SongContextMenu {
   static void show({
@@ -26,15 +27,7 @@ class SongContextMenu {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: sheetTheme.colorScheme.onSurfaceVariant.withAlpha(80),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+              const BottomSheetDragHandle(),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(

@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/utils/seeded_stream.dart';
 import '../data/models/song_model.dart';
 import '../services/history/history_service.dart';
 import '../core/service_locator.dart' as locator;
-import 'songs_provider.dart';
+import 'repository_providers.dart';
 
 final historyServiceProvider = Provider<HistoryService>((ref) {
   return locator.historyService;
@@ -10,22 +11,13 @@ final historyServiceProvider = Provider<HistoryService>((ref) {
 
 final historyProvider = StreamProvider<List<HistoryEntry>>((ref) {
   final service = ref.watch(historyServiceProvider);
-  return _seededHistoryStream(service.entries, service.historyStream);
+  return seededStream(service.entries, service.historyStream);
 });
-
-/// Emits the current value immediately, then forwards all stream events.
-Stream<List<HistoryEntry>> _seededHistoryStream(
-  List<HistoryEntry> currentValue,
-  Stream<List<HistoryEntry>> stream,
-) async* {
-  yield currentValue;
-  yield* stream;
-}
 
 final recentSongsProvider = Provider<List<SongModel>>((ref) {
   final historyAsync = ref.watch(historyProvider);
-  final songsAsync = ref.watch(songsProvider);
-  final songs = songsAsync.valueOrNull ?? [];
+  final repo = ref.watch(songRepositoryProvider);
+  final songs = repo.cachedSongs;
 
   return historyAsync.when(
     data: (entries) {

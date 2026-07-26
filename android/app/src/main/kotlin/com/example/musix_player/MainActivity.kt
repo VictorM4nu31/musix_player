@@ -3,7 +3,6 @@ package com.example.musix_player
 import android.content.ContentUris
 import android.content.ContentValues
 import android.database.Cursor
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.MediaStore
 import io.flutter.embedding.engine.FlutterEngine
@@ -13,6 +12,7 @@ import com.ryanheise.audioservice.AudioServiceFragmentActivity
 class MainActivity : AudioServiceFragmentActivity() {
 
     private val CHANNEL = "com.musix_player/music_scanner"
+    private val MIN_DURATION_MS = 30_000L
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -26,7 +26,7 @@ class MainActivity : AudioServiceFragmentActivity() {
                     result.success(getAllSongs())
                 }
                 "getSongArtwork" -> {
-                    val albumId = call.argument<Long>("albumId")
+                    val albumId = call.argument<Number>("albumId")?.toLong()
                     if (albumId != null && albumId > 0) {
                         result.success(getArtworkUri(albumId))
                     } else {
@@ -34,24 +34,24 @@ class MainActivity : AudioServiceFragmentActivity() {
                     }
                 }
                 "getArtworkBytes" -> {
-                    val albumId = call.argument<Long>("albumId")
+                    val albumId = call.argument<Number>("albumId")?.toLong()
                     if (albumId != null && albumId > 0) {
-                        val bytes = getArtworkBytes(albumId)
-                        result.success(bytes)
+                        result.success(getArtworkBytes(albumId))
                     } else {
                         result.success(null)
                     }
                 }
                 "updateSongMetadata" -> {
-                    val songId = call.argument<Long>("songId")
+                    val songId = call.argument<Number>("songId")?.toLong()
                     val title = call.argument<String>("title")
                     val artist = call.argument<String>("artist")
                     val album = call.argument<String>("album")
-                    val year = call.argument<Int>("year")
-                    val track = call.argument<Int>("track")
+                    val year = call.argument<Number>("year")?.toInt()
+                    val track = call.argument<Number>("track")?.toInt()
                     if (songId != null) {
-                        val success = updateSongMetadata(songId, title, artist, album, year, track)
-                        result.success(success)
+                        result.success(
+                            updateSongMetadata(songId, title, artist, album, year, track)
+                        )
                     } else {
                         result.success(false)
                     }
@@ -80,11 +80,8 @@ class MainActivity : AudioServiceFragmentActivity() {
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
         val sortOrder = "${MediaStore.Audio.Media.TITLE} ASC"
 
-        var cursor: Cursor? = null
         try {
-            cursor = contentResolver.query(uri, projection, selection, null, sortOrder)
-
-            cursor?.use { c ->
+            contentResolver.query(uri, projection, selection, null, sortOrder)?.use { c ->
                 val idColumn = c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
                 val titleColumn = c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
                 val artistColumn = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
@@ -98,48 +95,45 @@ class MainActivity : AudioServiceFragmentActivity() {
 
                 while (c.moveToNext()) {
                     val id = c.getLong(idColumn)
-                    val title = c.getString(titleColumn) ?: "Desconocido"
-                    val artist = c.getString(artistColumn) ?: "Desconocido"
-                    val album = c.getString(albumColumn) ?: "Desconocido"
                     val duration = c.getLong(durationColumn)
-                    val data = c.getString(dataColumn) ?: ""
+                    if (duration <= MIN_DURATION_MS) continue
+
                     val albumId = c.getLong(albumIdColumn)
-                    val size = c.getLong(sizeColumn)
-                    val year = c.getInt(yearColumn)
-                    val track = c.getInt(trackColumn)
-                    val genre = getGenre(id)
+                    val contentUri = ContentUris.withAppendedId(
+                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                        id
+                    ).toString()
 
-                    // Only include files that look like music (duration > 30 seconds)
-                    if (duration > 30000) {
-                        val artworkUri = if (albumId > 0) {
-                            getArtworkUri(albumId)
-                        } else {
-                            null
-                        }
-
-                        songs.add(
-                            mapOf(
-                                "id" to id,
-                                "title" to title,
-                                "artist" to artist,
-                                "album" to album,
-                                "duration" to duration,
-                                "filePath" to data,
-                                "albumId" to albumId,
-                                "size" to size,
-                                "year" to year,
-                                "track" to track,
-                                "genre" to genre,
-                                "artworkUri" to artworkUri,
-                            )
-                        )
+                    val artworkUri = if (albumId > 0) {
+                        ContentUris.withAppendedId(
+                            Uri.parse("content://media/external/audio/albumart"),
+                            albumId
+                        ).toString()
+                    } else {
+                        null
                     }
+
+                    songs.add(
+                        mapOf(
+                            "id" to id,
+                            "title" to (c.getString(titleColumn) ?: "Desconocido"),
+                            "artist" to (c.getString(artistColumn) ?: "Desconocido"),
+                            "album" to (c.getString(albumColumn) ?: "Desconocido"),
+                            "duration" to duration,
+                            "filePath" to (c.getString(dataColumn) ?: ""),
+                            "contentUri" to contentUri,
+                            "albumId" to albumId,
+                            "size" to c.getLong(sizeColumn),
+                            "year" to c.getInt(yearColumn),
+                            "track" to c.getInt(trackColumn),
+                            "genre" to null,
+                            "artworkUri" to artworkUri,
+                        )
+                    )
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
-        } finally {
-            cursor?.close()
         }
 
         return songs
@@ -147,39 +141,10 @@ class MainActivity : AudioServiceFragmentActivity() {
 
     private fun getArtworkUri(albumId: Long): String? {
         return try {
-            val artworkUri = ContentUris.withAppendedId(
+            ContentUris.withAppendedId(
                 Uri.parse("content://media/external/audio/albumart"),
                 albumId
-            )
-            // Verify the artwork exists by checking with a query
-            contentResolver.query(artworkUri, null, null, null, null)?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    artworkUri.toString()
-                } else {
-                    null
-                }
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun getGenre(audioId: Long): String? {
-        return try {
-            val genreUri = MediaStore.Audio.Genres.getContentUriForAudioId(
-                "external",
-                audioId.toInt()
-            )
-            var genre: String? = null
-            contentResolver.query(genreUri, null, null, null, null)?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val genreColumn = cursor.getColumnIndex(MediaStore.Audio.Genres.NAME)
-                    if (genreColumn >= 0) {
-                        genre = cursor.getString(genreColumn)
-                    }
-                }
-            }
-            genre
+            ).toString()
         } catch (e: Exception) {
             null
         }
@@ -219,6 +184,7 @@ class MainActivity : AudioServiceFragmentActivity() {
             year?.let { values.put(MediaStore.Audio.Media.YEAR, it) }
             track?.let { values.put(MediaStore.Audio.Media.TRACK, it) }
 
+            if (values.size() == 0) return false
             val updated = contentResolver.update(songUri, values, null, null)
             updated > 0
         } catch (e: Exception) {

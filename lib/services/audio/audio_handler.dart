@@ -17,7 +17,8 @@ class MusixAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
   StreamSubscription<Duration>? _positionSubscription;
 
   void _init() {
-    _playbackEventSubscription = _player.playbackEventStream.listen(_onPlaybackEvent);
+    _playbackEventSubscription =
+        _player.playbackEventStream.listen(_onPlaybackEvent);
 
     _songSubscription = _audioService.currentSongStream.listen((song) {
       if (song != null) {
@@ -49,8 +50,25 @@ class MusixAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
       updatePosition: _player.position,
       bufferedPosition: _player.bufferedPosition,
       speed: _player.speed,
-      queueIndex: _player.currentIndex,
+      queueIndex: _audioService.currentIndex >= 0
+          ? _audioService.currentIndex
+          : _player.currentIndex,
+      shuffleMode: _audioService.isShuffleMode
+          ? AudioServiceShuffleMode.all
+          : AudioServiceShuffleMode.none,
+      repeatMode: _mapRepeatMode(_audioService.loopMode),
     ));
+  }
+
+  AudioServiceRepeatMode _mapRepeatMode(LoopMode mode) {
+    switch (mode) {
+      case LoopMode.off:
+        return AudioServiceRepeatMode.none;
+      case LoopMode.one:
+        return AudioServiceRepeatMode.one;
+      case LoopMode.all:
+        return AudioServiceRepeatMode.all;
+    }
   }
 
   AudioProcessingState _mapProcessingState(ProcessingState state) {
@@ -77,13 +95,16 @@ class MusixAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
   }
 
   MediaItem _toMediaItem(SongModel song) {
+    final id = song.contentUri?.isNotEmpty == true
+        ? song.contentUri!
+        : (song.filePath.isNotEmpty ? song.filePath : song.id.toString());
     return MediaItem(
-      id: song.filePath,
+      id: id,
       title: song.title,
       artist: song.artist,
       album: song.album,
       duration: song.duration,
-      artUri: song.artworkUri != null ? Uri.parse(song.artworkUri!) : null,
+      artUri: song.artworkUri != null ? Uri.tryParse(song.artworkUri!) : null,
     );
   }
 
@@ -110,21 +131,29 @@ class MusixAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
 
   @override
   Future<void> skipToQueueItem(int index) async {
-    if (index >= 0 && index < _audioService.queue.length) {
-      final song = _audioService.queue[index];
-      await _audioService.play(song);
-    }
+    await _audioService.seekToIndex(index);
+    await _player.play();
   }
 
   @override
   Future<void> setShuffleMode(AudioServiceShuffleMode shuffleMode) async {
-    _audioService.toggleShuffle();
-    await super.setShuffleMode(shuffleMode);
+    final enabled = shuffleMode != AudioServiceShuffleMode.none;
+    _audioService.setShuffleMode(enabled);
+    await super.setShuffleMode(
+      enabled ? AudioServiceShuffleMode.all : AudioServiceShuffleMode.none,
+    );
   }
 
   @override
   Future<void> setRepeatMode(AudioServiceRepeatMode repeatMode) async {
-    _audioService.cycleLoopMode();
+    final loopMode = switch (repeatMode) {
+      AudioServiceRepeatMode.none ||
+      AudioServiceRepeatMode.group =>
+        LoopMode.off,
+      AudioServiceRepeatMode.one => LoopMode.one,
+      AudioServiceRepeatMode.all => LoopMode.all,
+    };
+    _audioService.setLoopMode(loopMode);
     await super.setRepeatMode(repeatMode);
   }
 

@@ -5,6 +5,7 @@ class SongModel {
   final String album;
   final Duration duration;
   final String filePath;
+  final String? contentUri;
   final int albumId;
   final int size;
   final int year;
@@ -19,6 +20,7 @@ class SongModel {
     required this.album,
     required this.duration,
     required this.filePath,
+    this.contentUri,
     required this.albumId,
     required this.size,
     required this.year,
@@ -27,14 +29,27 @@ class SongModel {
     this.artworkUri,
   });
 
+  /// Preferred URI for playback (content:// first, then file path).
+  Uri get playbackUri {
+    final content = contentUri?.trim();
+    if (content != null && content.isNotEmpty) {
+      return Uri.parse(content);
+    }
+    if (filePath.isNotEmpty) {
+      return Uri.file(filePath);
+    }
+    throw StateError('Song $id has no playable URI');
+  }
+
   factory SongModel.fromMap(Map<String, dynamic> map) {
     return SongModel(
-      id: map['id'] as int,
+      id: (map['id'] as num).toInt(),
       title: map['title'] as String? ?? 'Desconocido',
       artist: map['artist'] as String? ?? 'Desconocido',
       album: map['album'] as String? ?? 'Desconocido',
-      duration: Duration(milliseconds: (map['duration'] as int?) ?? 0),
+      duration: Duration(milliseconds: (map['duration'] as num?)?.toInt() ?? 0),
       filePath: map['filePath'] as String? ?? '',
+      contentUri: map['contentUri'] as String?,
       albumId: (map['albumId'] as num?)?.toInt() ?? 0,
       size: (map['size'] as num?)?.toInt() ?? 0,
       year: (map['year'] as num?)?.toInt() ?? 0,
@@ -52,6 +67,7 @@ class SongModel {
       'album': album,
       'duration': duration.inMilliseconds,
       'filePath': filePath,
+      'contentUri': contentUri,
       'albumId': albumId,
       'size': size,
       'year': year,
@@ -68,6 +84,7 @@ class SongModel {
     String? album,
     Duration? duration,
     String? filePath,
+    String? contentUri,
     int? albumId,
     int? size,
     int? year,
@@ -82,6 +99,7 @@ class SongModel {
       album: album ?? this.album,
       duration: duration ?? this.duration,
       filePath: filePath ?? this.filePath,
+      contentUri: contentUri ?? this.contentUri,
       albumId: albumId ?? this.albumId,
       size: size ?? this.size,
       year: year ?? this.year,
@@ -94,9 +112,7 @@ class SongModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is SongModel &&
-          runtimeType == other.runtimeType &&
-          id == other.id;
+      other is SongModel && runtimeType == other.runtimeType && id == other.id;
 
   @override
   int get hashCode => id.hashCode;

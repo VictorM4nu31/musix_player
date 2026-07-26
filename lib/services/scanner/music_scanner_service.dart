@@ -57,11 +57,11 @@ class MusicScannerService {
         'updateSongMetadata',
         {
           'songId': songId,
-          if (title != null) 'title': title,
-          if (artist != null) 'artist': artist,
-          if (album != null) 'album': album,
-          if (year != null) 'year': year,
-          if (track != null) 'track': track,
+          'title': ?title,
+          'artist': ?artist,
+          'album': ?album,
+          'year': ?year,
+          'track': ?track,
         },
       );
       return result ?? false;

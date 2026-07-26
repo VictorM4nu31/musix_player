@@ -10,10 +10,27 @@ class SongDetailScreen extends ConsumerWidget {
 
   final int songId;
 
+  SongModel? _findSong(WidgetRef ref) {
+    final repo = ref.watch(songRepositoryProvider);
+    for (final s in repo.cachedSongs) {
+      if (s.id == songId) return s;
+    }
+    final visible = ref.watch(songsProvider).valueOrNull ?? [];
+    for (final s in visible) {
+      if (s.id == songId) return s;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final songsAsync = ref.watch(songsProvider);
     final theme = Theme.of(context);
+    final song = _findSong(ref);
+
+    if (song != null) {
+      return _buildDetail(context, theme, song);
+    }
 
     return songsAsync.when(
       loading: () => _buildScaffold(
@@ -28,18 +45,12 @@ class SongDetailScreen extends ConsumerWidget {
         title: 'Información',
         body: Center(child: Text('Error: $e')),
       ),
-      data: (songs) {
-        final song = songs.where((s) => s.id == songId).firstOrNull;
-        if (song == null) {
-          return _buildScaffold(
-            context,
-            theme,
-            title: 'Información',
-            body: const Center(child: Text('Canción no encontrada')),
-          );
-        }
-        return _buildDetail(context, theme, song);
-      },
+      data: (_) => _buildScaffold(
+        context,
+        theme,
+        title: 'Información',
+        body: const Center(child: Text('Canción no encontrada')),
+      ),
     );
   }
 
@@ -56,8 +67,10 @@ class SongDetailScreen extends ConsumerWidget {
   }
 
   Scaffold _buildDetail(BuildContext context, ThemeData theme, SongModel song) {
-    final file = Uri.tryParse(song.filePath);
-    final format = file?.pathSegments.lastOrNull?.split('.').last ?? 'mp3';
+    final path = song.filePath.isNotEmpty ? song.filePath : (song.contentUri ?? '');
+    final format = path.contains('.')
+        ? path.split('.').last
+        : 'audio';
 
     return Scaffold(
       appBar: AppBar(title: const Text('Información')),
@@ -119,11 +132,11 @@ class SongDetailScreen extends ConsumerWidget {
             label: 'Formato',
             value: format.toUpperCase(),
           ),
-          if (song.filePath.isNotEmpty)
+          if (path.isNotEmpty)
             _InfoRow(
               icon: Icons.folder_rounded,
               label: 'Ubicación',
-              value: song.filePath,
+              value: path,
               isLongText: true,
             ),
         ],
@@ -154,11 +167,7 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            size: 22,
-            color: theme.colorScheme.primary,
-          ),
+          Icon(icon, size: 22, color: theme.colorScheme.primary),
           const SizedBox(width: 14),
           SizedBox(
             width: 90,

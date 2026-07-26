@@ -68,8 +68,7 @@ class PlaylistDetailScreen extends ConsumerWidget {
                   child: ReorderableListView.builder(
                     padding: const EdgeInsets.only(bottom: 16),
                     itemCount: songs.length,
-                    // ignore: deprecated_member_use
-                    onReorder: (oldIndex, newIndex) {
+                    onReorderItem: (oldIndex, newIndex) {
                       playlistService.reorderPlaylistSongs(
                         playlistId,
                         oldIndex,
@@ -85,6 +84,7 @@ class PlaylistDetailScreen extends ConsumerWidget {
                         album: song.album,
                         duration: song.duration,
                         artworkUri: song.artworkUri,
+                        albumId: song.albumId,
                         onTap: () {
                           audioService.play(
                             song,

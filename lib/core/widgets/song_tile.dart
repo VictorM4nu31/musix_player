@@ -11,6 +11,7 @@ class SongTile extends StatelessWidget {
     this.album,
     this.duration,
     this.artworkUri,
+    this.albumId,
     this.isSelected = false,
     this.trailing,
     this.onTap,
@@ -23,6 +24,7 @@ class SongTile extends StatelessWidget {
   final String? album;
   final Duration? duration;
   final String? artworkUri;
+  final int? albumId;
   final bool isSelected;
   final Widget? trailing;
   final VoidCallback? onTap;
@@ -52,6 +54,7 @@ class SongTile extends StatelessWidget {
           children: [
             ArtworkImage(
               imageUri: artworkUri,
+              albumId: albumId,
               size: 52,
               borderRadius: AppConstants.artworkBorderRadius,
             ),
@@ -66,9 +69,7 @@ class SongTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w500,
-                      color: isSelected
-                          ? theme.colorScheme.primary
-                          : null,
+                      color: isSelected ? theme.colorScheme.primary : null,
                     ),
                   ),
                   if (artist != null) ...[

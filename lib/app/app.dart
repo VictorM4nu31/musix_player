@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
 import 'theme/pixel_art_theme.dart';
+import '../core/constants/app_constants.dart';
 import '../core/service_locator.dart';
 import '../services/audio/audio_player_service.dart';
 import '../services/audio/audio_handler.dart';
@@ -26,11 +27,22 @@ class MusixPlayerApp extends StatefulWidget {
 class _MusixPlayerAppState extends State<MusixPlayerApp> {
   bool _initialized = false;
   String? _error;
+  StreamSubscription? _positionSub;
+  StreamSubscription? _songSub;
+  int? _historyCandidateId;
+  DateTime? _historyCandidateSince;
 
   @override
   void initState() {
     super.initState();
     _initServices();
+  }
+
+  @override
+  void dispose() {
+    _positionSub?.cancel();
+    _songSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _initServices() async {
@@ -58,7 +70,26 @@ class _MusixPlayerAppState extends State<MusixPlayerApp> {
       audioService = AudioPlayerService();
       audioService.setBlacklistChecker(blacklistService.isBlacklisted);
 
-      audioService.songStartedStream.listen((song) {
+      _songSub = audioService.currentSongStream.listen((song) {
+        if (song == null) {
+          _historyCandidateId = null;
+          _historyCandidateSince = null;
+          return;
+        }
+        if (_historyCandidateId != song.id) {
+          _historyCandidateId = song.id;
+          _historyCandidateSince = DateTime.now();
+        }
+      });
+
+      _positionSub = audioService.positionStream.listen((position) {
+        final song = audioService.currentSong;
+        if (song == null || _historyCandidateId != song.id) return;
+        if (position < AppConstants.historyMinPlayDuration) return;
+        final since = _historyCandidateSince;
+        if (since == null) return;
+        // Record once per candidate song after threshold.
+        _historyCandidateSince = null;
         historyService.addEntry(song);
       });
 
