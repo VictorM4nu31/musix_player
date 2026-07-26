@@ -6,52 +6,53 @@ import 'vinyl_disc.dart';
 import 'minimal_pulse.dart';
 import 'animation_type.dart';
 
-class PlayerAnimationWrapper extends StatefulWidget {
+class PlayerAnimationWrapper extends StatelessWidget {
   const PlayerAnimationWrapper({
     super.key,
     required this.child,
     required this.animationType,
     required this.isPlaying,
-    this.size = 280,
   });
 
   final Widget child;
   final PlayerAnimationType animationType;
   final bool isPlaying;
-  final double size;
 
-  @override
-  State<PlayerAnimationWrapper> createState() => _PlayerAnimationWrapperState();
-}
-
-class _PlayerAnimationWrapperState extends State<PlayerAnimationWrapper> {
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: widget.size,
-      height: widget.size,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          _buildAnimation(),
-          widget.child,
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : 280.0;
+
+        return SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              _buildAnimation(size),
+              child,
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildAnimation() {
-    switch (widget.animationType) {
+  Widget _buildAnimation(double size) {
+    switch (animationType) {
       case PlayerAnimationType.waves:
-        return AudioWaves(isPlaying: widget.isPlaying, size: widget.size);
+        return AudioWaves(isPlaying: isPlaying, size: size);
       case PlayerAnimationType.equalizer:
-        return EqualizerBars(isPlaying: widget.isPlaying, size: widget.size);
+        return EqualizerBars(isPlaying: isPlaying, size: size);
       case PlayerAnimationType.pulse:
-        return PulseEffect(isPlaying: widget.isPlaying, size: widget.size);
+        return PulseEffect(isPlaying: isPlaying, size: size);
       case PlayerAnimationType.vinyl:
-        return VinylDisc(isPlaying: widget.isPlaying, size: widget.size);
+        return VinylDisc(isPlaying: isPlaying, size: size);
       case PlayerAnimationType.minimal:
-        return MinimalPulse(isPlaying: widget.isPlaying, size: widget.size);
+        return MinimalPulse(isPlaying: isPlaying, size: size);
       case PlayerAnimationType.none:
         return const SizedBox.shrink();
     }

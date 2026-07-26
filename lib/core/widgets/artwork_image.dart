@@ -106,26 +106,32 @@ class _ArtworkImageState extends State<ArtworkImage> {
     final isPixelArt = theme.brightness == Brightness.dark &&
         theme.scaffoldBackgroundColor == PixelArtColors.background;
 
-    return Container(
-      width: widget.size,
-      height: widget.size,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(widget.borderRadius),
-        color: isPixelArt
-            ? PixelArtColors.card
-            : theme.colorScheme.primary.withAlpha(30),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: _buildContent(theme, isPixelArt),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final effectiveSize = widget.size.isFinite ? widget.size : constraints.biggest.shortestSide;
+
+        return Container(
+          width: effectiveSize > 0 ? effectiveSize : widget.size,
+          height: effectiveSize > 0 ? effectiveSize : widget.size,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            color: isPixelArt
+                ? PixelArtColors.card
+                : theme.colorScheme.primary.withAlpha(30),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: _buildContent(theme, isPixelArt, effectiveSize > 0 ? effectiveSize : widget.size),
+        );
+      },
     );
   }
 
-  Widget _buildContent(ThemeData theme, bool isPixelArt) {
+  Widget _buildContent(ThemeData theme, bool isPixelArt, double effectiveSize) {
     if (_isLoading) {
       return Center(
         child: SizedBox(
-          width: widget.size * 0.3,
-          height: widget.size * 0.3,
+          width: effectiveSize * 0.3,
+          height: effectiveSize * 0.3,
           child: CircularProgressIndicator(
             strokeWidth: 2,
             color: isPixelArt
@@ -141,10 +147,10 @@ class _ArtworkImageState extends State<ArtworkImage> {
         return Image.memory(
           _bytes!,
           fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _buildPlaceholder(theme, isPixelArt),
+          errorBuilder: (_, _, _) => _buildPlaceholder(theme, isPixelArt, effectiveSize),
         );
       } catch (_) {
-        return _buildPlaceholder(theme, isPixelArt);
+        return _buildPlaceholder(theme, isPixelArt, effectiveSize);
       }
     }
 
@@ -158,8 +164,8 @@ class _ArtworkImageState extends State<ArtworkImage> {
             if (loadingProgress == null) return child;
             return Center(
               child: SizedBox(
-                width: widget.size * 0.3,
-                height: widget.size * 0.3,
+                width: effectiveSize * 0.3,
+                height: effectiveSize * 0.3,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   value: loadingProgress.expectedTotalBytes != null
@@ -170,23 +176,23 @@ class _ArtworkImageState extends State<ArtworkImage> {
               ),
             );
           },
-          errorBuilder: (_, _, _) => _buildPlaceholder(theme, isPixelArt),
+          errorBuilder: (_, _, _) => _buildPlaceholder(theme, isPixelArt, effectiveSize),
         );
       }
     }
 
-    return _buildPlaceholder(theme, isPixelArt);
+    return _buildPlaceholder(theme, isPixelArt, effectiveSize);
   }
 
-  Widget _buildPlaceholder(ThemeData theme, bool isPixelArt) {
+  Widget _buildPlaceholder(ThemeData theme, bool isPixelArt, double effectiveSize) {
     if (isPixelArt) {
       return Container(
         color: PixelArtColors.card,
         child: CustomPaint(
-          size: Size(widget.size, widget.size),
+          size: Size(effectiveSize, effectiveSize),
           painter: _PixelArtNotePainter(
             color: PixelArtColors.primary.withAlpha(120),
-            size: widget.size,
+            size: effectiveSize,
           ),
         ),
       );
@@ -196,7 +202,7 @@ class _ArtworkImageState extends State<ArtworkImage> {
       color: theme.colorScheme.primary.withAlpha(30),
       child: Icon(
         Icons.music_note_rounded,
-        size: widget.size * 0.5,
+        size: effectiveSize * 0.5,
         color: theme.colorScheme.primary.withAlpha(150),
       ),
     );

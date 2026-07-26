@@ -165,7 +165,6 @@ class _PlayerContentState extends ConsumerState<_PlayerContent>
         child: PlayerAnimationWrapper(
           animationType: animationType,
           isPlaying: widget.isPlaying,
-          size: double.infinity,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             transitionBuilder: (child, animation) {
