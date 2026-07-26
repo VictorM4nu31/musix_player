@@ -12,6 +12,7 @@ class AudioPlayerService {
   int _currentIndex = -1;
   bool _isShuffleMode = false;
   LoopMode _loopMode = LoopMode.off;
+  bool Function(int songId)? _isBlacklisted;
 
   final _queueController = StreamController<List<SongModel>>.broadcast();
   final _currentSongController = StreamController<SongModel?>.broadcast();
@@ -41,6 +42,10 @@ class AudioPlayerService {
   Stream<SongModel?> get currentSongStream => _currentSongController.stream;
   Stream<SongModel> get songStartedStream => _songStartedController.stream;
 
+  void setBlacklistChecker(bool Function(int songId) checker) {
+    _isBlacklisted = checker;
+  }
+
   void _init() {
     _indexSubscription = _player.currentIndexStream.listen((index) {
       if (index != null) {
@@ -66,7 +71,15 @@ class AudioPlayerService {
 
   Future<void> play(SongModel song, {List<SongModel>? playlist}) async {
     if (playlist != null) {
-      _queue = List.from(playlist);
+      if (_isBlacklisted != null) {
+        final filtered = playlist.where((s) => !_isBlacklisted!(s.id)).toList();
+        if (!filtered.any((s) => s.id == song.id)) {
+          filtered.insert(0, song);
+        }
+        _queue = filtered;
+      } else {
+        _queue = List.from(playlist);
+      }
       _currentIndex = _queue.indexWhere((s) => s.id == song.id);
       if (_currentIndex == -1) {
         _queue.insert(0, song);
@@ -157,7 +170,44 @@ class AudioPlayerService {
       _player.play();
     } else if (_currentIndex < _queue.length - 1 ||
         _loopMode == LoopMode.all) {
-      seekToNext();
+      _skipToNextNonBlacklisted();
+    }
+  }
+
+  Future<void> _skipToNextNonBlacklisted() async {
+    if (_isBlacklisted == null) {
+      await seekToNext();
+      return;
+    }
+
+    int nextIndex = _currentIndex + 1;
+    final startIndex = nextIndex;
+
+    while (nextIndex < _queue.length) {
+      if (!_isBlacklisted!(_queue[nextIndex].id)) {
+        _currentIndex = nextIndex;
+        _emitQueue();
+        _currentSongController.add(currentSong);
+        await _loadCurrentSong();
+        await _player.play();
+        return;
+      }
+      nextIndex++;
+    }
+
+    if (_loopMode == LoopMode.all && startIndex > 0) {
+      nextIndex = 0;
+      while (nextIndex < startIndex) {
+        if (!_isBlacklisted!(_queue[nextIndex].id)) {
+          _currentIndex = nextIndex;
+          _emitQueue();
+          _currentSongController.add(currentSong);
+          await _loadCurrentSong();
+          await _player.play();
+          return;
+        }
+        nextIndex++;
+      }
     }
   }
 

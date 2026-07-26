@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/widgets/player_animations/animation_type.dart';
+import '../../providers/blacklist_provider.dart';
 import '../../providers/history_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../core/service_locator.dart';
@@ -43,6 +46,18 @@ class SettingsScreen extends ConsumerWidget {
                 title: 'Orden predeterminado',
                 subtitle: _getSortName(sortPreference),
                 onTap: () => _showSortDialog(context, ref, sortPreference),
+              ),
+              _SettingsTile(
+                icon: Icons.animation_rounded,
+                title: 'Animación del reproductor',
+                subtitle: _getAnimationName(settingsService.playerAnimation),
+                onTap: () => _showAnimationDialog(context, ref),
+              ),
+              _SettingsTile(
+                icon: Icons.block_rounded,
+                title: 'Lista negra',
+                subtitle: _getBlacklistCount(ref),
+                onTap: () => context.push('/blacklist'),
               ),
             ],
           ),
@@ -104,6 +119,51 @@ class SettingsScreen extends ConsumerWidget {
       case SortPreference.dateAdded:
         return 'Por fecha';
     }
+  }
+
+  String _getBlacklistCount(WidgetRef ref) {
+    final blacklistIds = ref.watch(blacklistIdsProvider);
+    final count = blacklistIds.valueOrNull?.length ?? 0;
+    if (count == 0) return 'Sin canciones bloqueadas';
+    return '$count canciones bloqueadas';
+  }
+
+  String _getAnimationName(PlayerAnimationType animation) {
+    switch (animation) {
+      case PlayerAnimationType.waves:
+        return 'Ondas';
+      case PlayerAnimationType.equalizer:
+        return 'Ecualizador';
+      case PlayerAnimationType.pulse:
+        return 'Pulso';
+      case PlayerAnimationType.vinyl:
+        return 'Vinilo';
+      case PlayerAnimationType.minimal:
+        return 'Minimalista';
+      case PlayerAnimationType.none:
+        return 'Sin animación';
+    }
+  }
+
+  void _showAnimationDialog(BuildContext context, WidgetRef ref) {
+    final current = settingsService.playerAnimation;
+
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Animación del reproductor'),
+        children: PlayerAnimationType.values.map((type) {
+          return _SortOption(
+            title: _getAnimationName(type),
+            isSelected: current == type,
+            onTap: () {
+              settingsService.setPlayerAnimation(type);
+              Navigator.pop(context);
+            },
+          );
+        }).toList(),
+      ),
+    );
   }
 
   void _showThemeDialog(

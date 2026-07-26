@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
 import '../../core/widgets/loading_indicator.dart';
+import '../../core/widgets/song_context_menu.dart';
 import '../../core/widgets/song_tile.dart';
 import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
+import '../../providers/blacklist_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/playlist_provider.dart';
 import '../../services/playlist/playlist_service.dart';
@@ -38,104 +40,25 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   ) {
     final favoritesService = ref.read(favoritesServiceProvider);
     final isFavorite = favoritesService.isFavorite(song.id);
+    final blacklistService = ref.read(blacklistServiceProvider);
+    final isBlacklisted = blacklistService.isBlacklisted(song.id);
     final playlistService = ref.read(playlistServiceProvider);
 
-    showModalBottomSheet(
+    SongContextMenu.show(
       context: context,
-      builder: (context) {
-        final theme = Theme.of(context);
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurfaceVariant.withAlpha(80),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  song.title,
-                  style: theme.textTheme.titleMedium,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              ListTile(
-                leading: Icon(
-                  isFavorite
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
-                  color: isFavorite ? theme.colorScheme.error : null,
-                ),
-                title: Text(
-                  isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos',
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  favoritesService.toggleFavorite(song.id);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.playlist_add_rounded),
-                title: const Text('Agregar a playlist'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showPlaylistPicker(context, ref, song, playlistService);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.playlist_play_rounded),
-                title: const Text('Agregar a la cola'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ref
-                      .read(audioPlayerServiceProvider)
-                      .addToQueue(song);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.skip_next_rounded),
-                title: const Text('Reproducir siguiente'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ref
-                      .read(audioPlayerServiceProvider)
-                      .addNext(song);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.info_outline_rounded),
-                title: const Text('Información'),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/songs/${song.id}');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.edit_rounded),
-                title: const Text('Editar información'),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/songs/${song.id}/edit');
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        );
-      },
+      song: song,
+      isFavorite: isFavorite,
+      isBlacklisted: isBlacklisted,
+      onToggleFavorite: () => favoritesService.toggleFavorite(song.id),
+      onToggleBlacklist: () => blacklistService.toggleBlacklist(song.id),
+      onAddToQueue: () => ref.read(audioPlayerServiceProvider).addToQueue(song),
+      onPlayNext: () => ref.read(audioPlayerServiceProvider).addNext(song),
+      onAddToPlaylist: () => _showPlaylistPicker(context, song, playlistService),
     );
   }
 
   void _showPlaylistPicker(
     BuildContext context,
-    WidgetRef ref,
     SongModel song,
     PlaylistService playlistService,
   ) {

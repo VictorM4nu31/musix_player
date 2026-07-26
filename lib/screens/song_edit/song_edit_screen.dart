@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/widgets/artwork_image.dart';
+import '../../core/service_locator.dart';
 import '../../data/models/song_model.dart';
 import '../../providers/songs_provider.dart';
 import '../../services/scanner/music_scanner_service.dart';
@@ -82,6 +82,25 @@ class _SongEditScreenState extends ConsumerState<SongEditScreen> {
 
       if (success) {
         ref.read(songsProvider.notifier).loadSongs(forceRefresh: true);
+
+        if (audioService.currentSong?.id == widget.songId) {
+          final updatedSong = _song!.copyWith(
+            title: _titleController.text.trim(),
+            artist: _artistController.text.trim(),
+            album: _albumController.text.trim(),
+            genre: _genreController.text.trim().isEmpty
+                ? null
+                : _genreController.text.trim(),
+            year: int.tryParse(_yearController.text.trim()) ?? 0,
+            track: int.tryParse(_trackController.text.trim()) ?? 0,
+          );
+          audioHandler.mediaItem.add(audioHandler.mediaItem.value?.copyWith(
+            title: updatedSong.title,
+            artist: updatedSong.artist,
+            album: updatedSong.album,
+          ));
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Metadatos actualizados')),
         );
@@ -151,23 +170,32 @@ class _SongEditScreenState extends ConsumerState<SongEditScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Center(
-                  child: ArtworkImage(
-                    imageUri: _song!.artworkUri,
-                    albumId: _song!.albumId,
-                    size: 160,
-                    borderRadius: 16,
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withAlpha(20),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 20,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'La portada del álbum no es modificable desde esta aplicación.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    'La portada no se puede modificar desde esta app',
-                    style: theme.textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 _buildField('Título', _titleController, theme),
                 const SizedBox(height: 14),
                 _buildField('Artista', _artistController, theme),
@@ -181,15 +209,6 @@ class _SongEditScreenState extends ConsumerState<SongEditScreen> {
                 const SizedBox(height: 14),
                 _buildField('Número de pista', _trackController, theme,
                     keyboardType: TextInputType.number),
-                const SizedBox(height: 32),
-                Text(
-                  'Nota: Solo los metadatos de texto pueden editarse. '
-                  'La portada del álbum no es modificable desde el dispositivo.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
               ],
             ),
           ),

@@ -9,6 +9,7 @@ import 'theme/pixel_art_theme.dart';
 import '../core/service_locator.dart';
 import '../services/audio/audio_player_service.dart';
 import '../services/audio/audio_handler.dart';
+import '../services/blacklist/blacklist_service.dart';
 import '../services/history/history_service.dart';
 import '../services/settings/settings_service.dart';
 import '../screens/splash/splash_screen.dart';
@@ -40,7 +41,12 @@ class _MusixPlayerAppState extends State<MusixPlayerApp> {
       historyService = HistoryService();
       await historyService.init();
 
+      final blacklistSvc = BlacklistService();
+      await blacklistSvc.init();
+      blacklistService = blacklistSvc;
+
       audioService = AudioPlayerService();
+      audioService.setBlacklistChecker(blacklistService.isBlacklisted);
 
       audioService.songStartedStream.listen((song) {
         historyService.addEntry(song);

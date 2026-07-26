@@ -5,10 +5,13 @@ import 'package:just_audio/just_audio.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/animated_favorite_button.dart';
 import '../../core/widgets/artwork_image.dart';
+import '../../core/widgets/player_animations/animation_type.dart';
+import '../../core/widgets/player_animations/player_animation_wrapper.dart';
 import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../services/audio/audio_player_service.dart';
+import '../../core/service_locator.dart';
 
 class PlayerScreen extends ConsumerWidget {
   const PlayerScreen({super.key});
@@ -153,14 +156,16 @@ class _PlayerContentState extends ConsumerState<_PlayerContent>
   }
 
   Widget _buildArtwork(ThemeData theme) {
+    final animationType = settingsService.playerAnimation;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: AspectRatio(
         aspectRatio: 1,
-        child: AnimatedRotation(
-          turns: widget.isPlaying ? 1 : 0,
-          duration: const Duration(seconds: 20),
-          curve: Curves.linear,
+        child: PlayerAnimationWrapper(
+          animationType: animationType,
+          isPlaying: widget.isPlaying,
+          size: double.infinity,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             transitionBuilder: (child, animation) {
@@ -177,7 +182,7 @@ class _PlayerContentState extends ConsumerState<_PlayerContent>
               imageUri: widget.song.artworkUri,
               albumId: widget.song.albumId,
               size: double.infinity,
-              borderRadius: 24,
+              borderRadius: animationType == PlayerAnimationType.vinyl ? 999 : 24,
             ),
           ),
         ),

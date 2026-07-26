@@ -2,35 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/widgets/empty_state.dart';
-import '../../core/widgets/song_context_menu.dart';
 import '../../core/widgets/song_tile.dart';
-import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
 import '../../providers/blacklist_provider.dart';
-import '../../providers/favorites_provider.dart';
-import '../../providers/history_provider.dart';
-import '../../services/history/history_service.dart';
 
-class HistoryScreen extends ConsumerWidget {
-  const HistoryScreen({super.key});
+class BlacklistScreen extends ConsumerWidget {
+  const BlacklistScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final historyAsync = ref.watch(historyProvider);
+    final blacklistedAsync = ref.watch(blacklistedSongsProvider);
     final audioService = ref.read(audioPlayerServiceProvider);
-    final historyService = ref.read(historyServiceProvider);
+    final blacklistService = ref.read(blacklistServiceProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historial'),
+        title: const Text('Lista negra'),
         actions: [
-          historyAsync.when(
-            data: (entries) {
-              if (entries.isEmpty) return const SizedBox.shrink();
+          blacklistedAsync.when(
+            data: (songs) {
+              if (songs.isEmpty) return const SizedBox.shrink();
               return IconButton(
-                onPressed: () => _showClearDialog(context, ref, historyService),
+                onPressed: () => _showClearDialog(context, ref, blacklistService),
                 icon: const Icon(Icons.delete_sweep_rounded),
-                tooltip: 'Limpiar historial',
+                tooltip: 'Vaciar lista negra',
               );
             },
             loading: () => const SizedBox.shrink(),
@@ -38,15 +33,16 @@ class HistoryScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: historyAsync.when(
+      body: blacklistedAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Error: $error')),
-        data: (entries) {
-          if (entries.isEmpty) {
+        data: (songs) {
+          if (songs.isEmpty) {
             return const EmptyState(
-              icon: Icons.history_rounded,
-              title: 'Sin historial',
-              subtitle: 'Las canciones que reproduzcas aparecerán aquí',
+              icon: Icons.block_rounded,
+              title: 'Sin canciones bloqueadas',
+              subtitle:
+                  'Las canciones en la lista negra no se reproducirán automáticamente',
             );
           }
 
@@ -59,18 +55,16 @@ class HistoryScreen extends ConsumerWidget {
                   vertical: 8,
                 ),
                 child: Text(
-                  '${entries.length} reproducciones',
+                  '${songs.length} bloqueadas',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.only(bottom: 16),
-                  itemCount: entries.length,
+                  itemCount: songs.length,
                   itemBuilder: (context, index) {
-                    final entry = entries[index];
-                    final song = entry.song;
-
+                    final song = songs[index];
                     return SongTile(
                       title: song.title,
                       artist: song.artist,
@@ -78,8 +72,7 @@ class HistoryScreen extends ConsumerWidget {
                       duration: song.duration,
                       artworkUri: song.artworkUri,
                       onTap: () {
-                        final songs = entries.map((e) => e.song).toList();
-                        audioService.play(song, playlist: songs);
+                        audioService.play(song);
                         context.push('/player');
                       },
                       onMorePressed: () {
@@ -87,7 +80,7 @@ class HistoryScreen extends ConsumerWidget {
                           context,
                           ref,
                           song,
-                          historyService,
+                          blacklistService,
                         );
                       },
                     );
@@ -104,14 +97,14 @@ class HistoryScreen extends ConsumerWidget {
   void _showClearDialog(
     BuildContext context,
     WidgetRef ref,
-    HistoryService historyService,
+    dynamic blacklistService,
   ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Limpiar historial'),
+        title: const Text('Vaciar lista negra'),
         content: const Text(
-          '¿Estás seguro de que quieres eliminar todo el historial de reproducción?',
+          '¿Estás seguro de que quieres quitar todas las canciones de la lista negra?',
         ),
         actions: [
           TextButton(
@@ -120,13 +113,13 @@ class HistoryScreen extends ConsumerWidget {
           ),
           FilledButton(
             onPressed: () {
-              historyService.clearHistory();
+              blacklistService.clearBlacklist();
               Navigator.pop(context);
             },
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Eliminar'),
+            child: const Text('Vaciar'),
           ),
         ],
       ),
@@ -136,25 +129,59 @@ class HistoryScreen extends ConsumerWidget {
   void _showSongContextMenu(
     BuildContext context,
     WidgetRef ref,
-    SongModel song,
-    HistoryService historyService,
+    dynamic song,
+    dynamic blacklistService,
   ) {
-    final blacklistService = ref.read(blacklistServiceProvider);
-    final isBlacklisted = blacklistService.isBlacklisted(song.id);
-    final favoritesService = ref.read(favoritesServiceProvider);
-    final isFavorite = favoritesService.isFavorite(song.id);
-
-    SongContextMenu.show(
+    showModalBottomSheet(
       context: context,
-      song: song,
-      isFavorite: isFavorite,
-      isBlacklisted: isBlacklisted,
-      onToggleFavorite: () => favoritesService.toggleFavorite(song.id),
-      onToggleBlacklist: () => blacklistService.toggleBlacklist(song.id),
-      onAddToQueue: () => ref.read(audioPlayerServiceProvider).addToQueue(song),
-      onPlayNext: () => ref.read(audioPlayerServiceProvider).addNext(song),
-      showRemoveFromHistory: true,
-      onRemoveFromHistory: () => historyService.removeEntry(song.id),
+      builder: (context) {
+        final theme = Theme.of(context);
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurfaceVariant.withAlpha(80),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  song.title,
+                  style: theme.textTheme.titleMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.check_circle_rounded,
+                  color: theme.colorScheme.primary,
+                ),
+                title: const Text('Quitar de lista negra'),
+                onTap: () {
+                  Navigator.pop(context);
+                  blacklistService.removeFromBlacklist(song.id);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.info_outline_rounded),
+                title: const Text('Información'),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/songs/${song.id}');
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
     );
   }
 }

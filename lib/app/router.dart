@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../core/utils/page_transitions.dart';
+import '../screens/blacklist/blacklist_screen.dart';
 import '../screens/library/library_screen.dart';
 import '../screens/playlists/playlists_screen.dart';
 import '../screens/playlists/playlist_detail_screen.dart';
@@ -116,6 +117,13 @@ final router = GoRouter(
           child: SongEditScreen(songId: songId),
         );
       },
+    ),
+    GoRoute(
+      path: '/blacklist',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => PageTransitions.slideFromRight(
+        child: const BlacklistScreen(),
+      ),
     ),
   ],
 );

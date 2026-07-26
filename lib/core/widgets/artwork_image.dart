@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../app/theme/pixel_art_theme.dart';
@@ -21,6 +22,9 @@ class ArtworkImage extends StatefulWidget {
 }
 
 class _ArtworkImageState extends State<ArtworkImage> {
+  static const int _maxCacheSize = 50;
+  static final LinkedHashMap<int, Uint8List> _cache = LinkedHashMap();
+
   Uint8List? _bytes;
   bool _isLoading = true;
 
@@ -54,15 +58,33 @@ class _ArtworkImageState extends State<ArtworkImage> {
     }
 
     if (uri.startsWith('content://') && widget.albumId != null && widget.albumId! > 0) {
+      final albumId = widget.albumId!;
+
+      final cached = _cache[albumId];
+      if (cached != null) {
+        if (mounted) {
+          setState(() {
+            _bytes = cached;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
       try {
         const channel = MethodChannel('com.musix_player/music_scanner');
         final result = await channel.invokeMethod<List<int>>(
           'getArtworkBytes',
-          {'albumId': widget.albumId},
+          {'albumId': albumId},
         );
-        if (result != null && mounted) {
+        if (result != null && result.isNotEmpty && mounted) {
+          final bytes = Uint8List.fromList(result);
+          _cache[albumId] = bytes;
+          if (_cache.length > _maxCacheSize) {
+            _cache.remove(_cache.keys.first);
+          }
           setState(() {
-            _bytes = Uint8List.fromList(result);
+            _bytes = bytes;
             _isLoading = false;
           });
         } else if (mounted) {

@@ -43,7 +43,7 @@ class MusixAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
         MediaAction.seekForward,
         MediaAction.seekBackward,
       },
-      androidCompactActionIndices: const [0, 1, 3],
+      androidCompactActionIndices: const [0, 1, 2],
       processingState: _mapProcessingState(_player.processingState),
       playing: _player.playing,
       updatePosition: _player.position,
@@ -73,7 +73,6 @@ class MusixAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
       MediaControl.skipToPrevious,
       if (_player.playing) MediaControl.pause else MediaControl.play,
       MediaControl.skipToNext,
-      MediaControl.stop,
     ];
   }
 

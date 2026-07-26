@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/song_context_menu.dart';
 import '../../core/widgets/song_tile.dart';
 import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
+import '../../providers/blacklist_provider.dart';
+import '../../providers/favorites_provider.dart';
 import '../../providers/playlist_provider.dart';
 import '../../services/playlist/playlist_service.dart';
 
@@ -114,90 +117,27 @@ class PlaylistDetailScreen extends ConsumerWidget {
     List<SongModel> songs,
     PlaylistService playlistService,
   ) {
-    showModalBottomSheet(
+    final favoritesService = ref.read(favoritesServiceProvider);
+    final isFavorite = favoritesService.isFavorite(song.id);
+    final blacklistService = ref.read(blacklistServiceProvider);
+    final isBlacklisted = blacklistService.isBlacklisted(song.id);
+
+    SongContextMenu.show(
       context: context,
-      builder: (context) {
-        final theme = Theme.of(context);
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurfaceVariant.withAlpha(80),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  song.title,
-                  style: theme.textTheme.titleMedium,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.playlist_remove_rounded,
-                  color: theme.colorScheme.error,
-                ),
-                title: Text(
-                  'Eliminar de esta playlist',
-                  style: TextStyle(color: theme.colorScheme.error),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  playlistService.removeSongFromPlaylist(playlistId, song.id);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${song.title} eliminada de la playlist'),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.playlist_play_rounded),
-                title: const Text('Agregar a la cola'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ref
-                      .read(audioPlayerServiceProvider)
-                      .addToQueue(song);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.skip_next_rounded),
-                title: const Text('Reproducir siguiente'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ref
-                      .read(audioPlayerServiceProvider)
-                      .addNext(song);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.info_outline_rounded),
-                title: const Text('Información'),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/songs/${song.id}');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.edit_rounded),
-                title: const Text('Editar información'),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/songs/${song.id}/edit');
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
+      song: song,
+      isFavorite: isFavorite,
+      isBlacklisted: isBlacklisted,
+      onToggleFavorite: () => favoritesService.toggleFavorite(song.id),
+      onToggleBlacklist: () => blacklistService.toggleBlacklist(song.id),
+      onAddToQueue: () => ref.read(audioPlayerServiceProvider).addToQueue(song),
+      onPlayNext: () => ref.read(audioPlayerServiceProvider).addNext(song),
+      showRemoveFromPlaylist: true,
+      onRemoveFromPlaylist: () {
+        playlistService.removeSongFromPlaylist(playlistId, song.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${song.title} eliminada de la playlist'),
+            duration: const Duration(seconds: 2),
           ),
         );
       },

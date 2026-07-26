@@ -44,10 +44,14 @@ class MiniPlayerWidget extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Row(
                   children: [
-                    ArtworkImage(
-                      imageUri: song.artworkUri,
-                      size: 44,
-                      borderRadius: 8,
+                    AnimatedScale(
+                      scale: playing ? 1.0 : 0.92,
+                      duration: const Duration(milliseconds: 300),
+                      child: ArtworkImage(
+                        imageUri: song.artworkUri,
+                        size: 44,
+                        borderRadius: 8,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
