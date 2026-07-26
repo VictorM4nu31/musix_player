@@ -62,12 +62,21 @@ class PlaylistDetailScreen extends ConsumerWidget {
                   ),
                 ),
                 Expanded(
-                  child: ListView.builder(
+                  child: ReorderableListView.builder(
                     padding: const EdgeInsets.only(bottom: 16),
                     itemCount: songs.length,
+                    // ignore: deprecated_member_use
+                    onReorder: (oldIndex, newIndex) {
+                      playlistService.reorderPlaylistSongs(
+                        playlistId,
+                        oldIndex,
+                        newIndex,
+                      );
+                    },
                     itemBuilder: (context, index) {
                       final song = songs[index];
                       return SongTile(
+                        key: ValueKey('pl_${playlistId}_${song.id}'),
                         title: song.title,
                         artist: song.artist,
                         album: song.album,
@@ -143,6 +152,12 @@ class PlaylistDetailScreen extends ConsumerWidget {
                 onTap: () {
                   Navigator.pop(context);
                   playlistService.removeSongFromPlaylist(playlistId, song.id);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${song.title} eliminada de la playlist'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
                 },
               ),
               ListTile(
@@ -163,6 +178,22 @@ class PlaylistDetailScreen extends ConsumerWidget {
                   ref
                       .read(audioPlayerServiceProvider)
                       .addNext(song);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.info_outline_rounded),
+                title: const Text('Información'),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/songs/${song.id}');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit_rounded),
+                title: const Text('Editar información'),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/songs/${song.id}/edit');
                 },
               ),
               const SizedBox(height: 16),

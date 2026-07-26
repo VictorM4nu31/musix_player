@@ -30,6 +30,45 @@ class MusicScannerService {
       return null;
     }
   }
+
+  Future<Uint8List?> getArtworkBytes(int albumId) async {
+    try {
+      final result = await _channel.invokeMethod<List<int>>(
+        'getArtworkBytes',
+        {'albumId': albumId},
+      );
+      if (result == null) return null;
+      return Uint8List.fromList(result);
+    } on PlatformException {
+      return null;
+    }
+  }
+
+  Future<bool> updateSongMetadata({
+    required int songId,
+    String? title,
+    String? artist,
+    String? album,
+    int? year,
+    int? track,
+  }) async {
+    try {
+      final result = await _channel.invokeMethod<bool>(
+        'updateSongMetadata',
+        {
+          'songId': songId,
+          if (title != null) 'title': title,
+          if (artist != null) 'artist': artist,
+          if (album != null) 'album': album,
+          if (year != null) 'year': year,
+          if (track != null) 'track': track,
+        },
+      );
+      return result ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
 }
 
 class MusicScannerException implements Exception {

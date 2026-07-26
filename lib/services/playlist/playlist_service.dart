@@ -84,6 +84,25 @@ class PlaylistService {
     _controller.add(_playlists);
   }
 
+  Future<void> reorderPlaylistSongs(
+    String playlistId,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final index = _playlists.indexWhere((p) => p.id == playlistId);
+    if (index == -1) return;
+
+    final songIds = List<int>.from(_playlists[index].songIds);
+    if (oldIndex < 0 || oldIndex >= songIds.length) return;
+    if (newIndex < 0 || newIndex >= songIds.length) return;
+
+    final songId = songIds.removeAt(oldIndex);
+    songIds.insert(newIndex, songId);
+    _playlists[index] = _playlists[index].copyWith(songIds: songIds);
+    await _save();
+    _controller.add(_playlists);
+  }
+
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
     final json = jsonEncode(_playlists.map((p) => p.toMap()).toList());

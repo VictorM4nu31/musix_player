@@ -7,6 +7,8 @@ import '../screens/playlists/playlist_detail_screen.dart';
 import '../screens/favorites/favorites_screen.dart';
 import '../screens/history/history_screen.dart';
 import '../screens/settings/settings_screen.dart';
+import '../screens/song_detail/song_detail_screen.dart';
+import '../screens/song_edit/song_edit_screen.dart';
 import '../screens/mini_player/mini_player_widget.dart';
 import '../screens/player/player_screen.dart';
 import '../screens/queue/queue_screen.dart';
@@ -94,6 +96,26 @@ final router = GoRouter(
       pageBuilder: (context, state) => PageTransitions.slideFromRight(
         child: const HistoryScreen(),
       ),
+    ),
+    GoRoute(
+      path: '/songs/:id',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final songId = int.parse(state.pathParameters['id']!);
+        return PageTransitions.slideFromRight(
+          child: SongDetailScreen(songId: songId),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/songs/:id/edit',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final songId = int.parse(state.pathParameters['id']!);
+        return PageTransitions.slideFromRight(
+          child: SongEditScreen(songId: songId),
+        );
+      },
     ),
   ],
 );

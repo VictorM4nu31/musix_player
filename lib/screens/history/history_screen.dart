@@ -196,6 +196,22 @@ class HistoryScreen extends ConsumerWidget {
                       .addNext(song);
                 },
               ),
+              ListTile(
+                leading: const Icon(Icons.info_outline_rounded),
+                title: const Text('Información'),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/songs/${song.id}');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit_rounded),
+                title: const Text('Editar información'),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/songs/${song.id}/edit');
+                },
+              ),
               const SizedBox(height: 16),
             ],
           ),

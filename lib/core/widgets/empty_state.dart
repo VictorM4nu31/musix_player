@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
+import '../../app/theme/pixel_art_theme.dart';
 
 class EmptyState extends StatefulWidget {
   const EmptyState({
@@ -61,6 +62,8 @@ class _EmptyStateState extends State<EmptyState>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isPixelArt = theme.brightness == Brightness.dark &&
+        theme.scaffoldBackgroundColor == PixelArtColors.background;
 
     return Center(
       child: FadeTransition(
@@ -72,25 +75,18 @@ class _EmptyStateState extends State<EmptyState>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: theme.colorScheme.primary.withAlpha(20),
-                  ),
-                  child: Icon(
-                    widget.icon,
-                    size: 64,
-                    color: theme.colorScheme.primary.withAlpha(150),
-                  ),
-                ),
+                isPixelArt
+                    ? _buildPixelIcon(theme)
+                    : _buildStandardIcon(theme),
                 const SizedBox(height: 24),
                 Text(
                   widget.title,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: (isPixelArt
+                          ? theme.textTheme.titleLarge?.copyWith(
+                              color: PixelArtColors.primary,
+                            )
+                          : theme.textTheme.titleLarge)
+                      ?.copyWith(fontWeight: FontWeight.w600),
                   textAlign: TextAlign.center,
                 ),
                 if (widget.subtitle != null) ...[
@@ -98,21 +94,87 @@ class _EmptyStateState extends State<EmptyState>
                   Text(
                     widget.subtitle!,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.textTheme.bodySmall?.color,
+                      color: isPixelArt
+                          ? PixelArtColors.textSecondary
+                          : theme.textTheme.bodySmall?.color,
                     ),
                     textAlign: TextAlign.center,
                   ),
                 ],
                 if (widget.actionLabel != null && widget.onAction != null) ...[
                   const SizedBox(height: 24),
-                  FilledButton.tonalIcon(
-                    onPressed: widget.onAction,
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: Text(widget.actionLabel!),
-                  ),
+                  isPixelArt
+                      ? _buildPixelActionButton()
+                      : FilledButton.tonalIcon(
+                          onPressed: widget.onAction,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: Text(widget.actionLabel!),
+                        ),
                 ],
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStandardIcon(ThemeData theme) {
+    return Container(
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: theme.colorScheme.primary.withAlpha(20),
+      ),
+      child: Icon(
+        widget.icon,
+        size: 64,
+        color: theme.colorScheme.primary.withAlpha(150),
+      ),
+    );
+  }
+
+  Widget _buildPixelIcon(ThemeData theme) {
+    return Container(
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: PixelArtColors.border.withAlpha(80),
+          width: 2,
+        ),
+        color: PixelArtColors.card,
+      ),
+      child: Icon(
+        widget.icon,
+        size: 56,
+        color: PixelArtColors.primary.withAlpha(150),
+      ),
+    );
+  }
+
+  Widget _buildPixelActionButton() {
+    return GestureDetector(
+      onTap: widget.onAction,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: PixelArtColors.primary,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: PixelArtColors.primary.withAlpha(150),
+            width: 2,
+          ),
+        ),
+        child: Text(
+          widget.actionLabel!,
+          style: const TextStyle(
+            color: PixelArtColors.background,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            fontFamily: 'monospace',
           ),
         ),
       ),

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum ThemePreference { system, light, dark }
+enum ThemePreference { system, light, dark, pixelArt }
 
 enum SortPreference { title, artist, album, duration, dateAdded }
 
@@ -12,11 +12,13 @@ class SettingsService {
   static const _notificationsKey = 'show_notifications';
 
   final _controller = StreamController<ThemePreference>.broadcast();
+  final _themeModeController = StreamController<ThemeMode>.broadcast();
   ThemePreference _themePreference = ThemePreference.system;
   SortPreference _sortPreference = SortPreference.title;
   bool _showNotifications = true;
 
   Stream<ThemePreference> get themeStream => _controller.stream;
+  Stream<ThemeMode> get themeModeStream => _themeModeController.stream;
   ThemePreference get themePreference => _themePreference;
   SortPreference get sortPreference => _sortPreference;
   bool get showNotifications => _showNotifications;
@@ -29,6 +31,8 @@ class SettingsService {
         return ThemeMode.dark;
       case ThemePreference.system:
         return ThemeMode.system;
+      case ThemePreference.pixelArt:
+        return ThemeMode.dark;
     }
   }
 
@@ -42,6 +46,9 @@ class SettingsService {
     _sortPreference = SortPreference.values[sortIndex];
 
     _showNotifications = prefs.getBool(_notificationsKey) ?? true;
+
+    _controller.add(_themePreference);
+    _themeModeController.add(themeMode);
   }
 
   Future<void> setThemePreference(ThemePreference preference) async {
@@ -49,6 +56,7 @@ class SettingsService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_themeKey, preference.index);
     _controller.add(_themePreference);
+    _themeModeController.add(themeMode);
   }
 
   Future<void> setSortPreference(SortPreference preference) async {
@@ -65,5 +73,6 @@ class SettingsService {
 
   Future<void> dispose() async {
     await _controller.close();
+    await _themeModeController.close();
   }
 }

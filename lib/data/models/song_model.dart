@@ -9,6 +9,7 @@ class SongModel {
   final int size;
   final int year;
   final int track;
+  final String? genre;
   final String? artworkUri;
 
   const SongModel({
@@ -22,6 +23,7 @@ class SongModel {
     required this.size,
     required this.year,
     required this.track,
+    this.genre,
     this.artworkUri,
   });
 
@@ -37,6 +39,7 @@ class SongModel {
       size: (map['size'] as num?)?.toInt() ?? 0,
       year: (map['year'] as num?)?.toInt() ?? 0,
       track: (map['track'] as num?)?.toInt() ?? 0,
+      genre: map['genre'] as String?,
       artworkUri: map['artworkUri'] as String?,
     );
   }
@@ -53,6 +56,7 @@ class SongModel {
       'size': size,
       'year': year,
       'track': track,
+      'genre': genre,
       'artworkUri': artworkUri,
     };
   }
@@ -68,6 +72,7 @@ class SongModel {
     int? size,
     int? year,
     int? track,
+    String? genre,
     String? artworkUri,
   }) {
     return SongModel(
@@ -81,6 +86,7 @@ class SongModel {
       size: size ?? this.size,
       year: year ?? this.year,
       track: track ?? this.track,
+      genre: genre ?? this.genre,
       artworkUri: artworkUri ?? this.artworkUri,
     );
   }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/song_model.dart';
 import '../services/favorites/favorites_service.dart';
@@ -5,7 +6,7 @@ import 'songs_provider.dart';
 
 final favoritesServiceProvider = Provider<FavoritesService>((ref) {
   final service = FavoritesService();
-  service.init();
+  unawaited(service.init());
   ref.onDispose(() => service.dispose());
   return service;
 });

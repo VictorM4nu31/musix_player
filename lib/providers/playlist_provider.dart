@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/playlist_model.dart';
 import '../data/models/song_model.dart';
@@ -6,7 +7,7 @@ import 'songs_provider.dart';
 
 final playlistServiceProvider = Provider<PlaylistService>((ref) {
   final service = PlaylistService();
-  service.init();
+  unawaited(service.init());
   ref.onDispose(() => service.dispose());
   return service;
 });

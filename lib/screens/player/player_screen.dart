@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/widgets/animated_favorite_button.dart';
 import '../../core/widgets/artwork_image.dart';
 import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
@@ -39,7 +40,7 @@ class PlayerScreen extends ConsumerWidget {
   }
 }
 
-class _PlayerContent extends ConsumerWidget {
+class _PlayerContent extends ConsumerStatefulWidget {
   const _PlayerContent({
     required this.song,
     required this.isPlaying,
@@ -55,10 +56,33 @@ class _PlayerContent extends ConsumerWidget {
   final AudioPlayerService audioService;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isFavorite = ref.watch(isFavoriteProvider(song.id));
+  ConsumerState<_PlayerContent> createState() => _PlayerContentState();
+}
+
+class _PlayerContentState extends ConsumerState<_PlayerContent>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _playPauseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _playPauseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+  }
+
+  @override
+  void dispose() {
+    _playPauseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isFavorite = ref.watch(isFavoriteProvider(widget.song.id));
     final theme = Theme.of(context);
-    final totalDuration = duration ?? song.duration;
+    final totalDuration = widget.duration ?? widget.song.duration;
 
     return Container(
       decoration: BoxDecoration(
@@ -110,14 +134,12 @@ class _PlayerContent extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
           ),
-          IconButton(
-            onPressed: () {
-              ref.read(favoritesServiceProvider).toggleFavorite(song.id);
+          AnimatedFavoriteButton(
+            isFavorite: isFavorite,
+            size: 28,
+            onChanged: (_) {
+              ref.read(favoritesServiceProvider).toggleFavorite(widget.song.id);
             },
-            icon: Icon(
-              isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-              color: isFavorite ? theme.colorScheme.error : null,
-            ),
           ),
           IconButton(
             onPressed: () {
@@ -136,13 +158,27 @@ class _PlayerContent extends ConsumerWidget {
       child: AspectRatio(
         aspectRatio: 1,
         child: AnimatedRotation(
-          turns: isPlaying ? 1 : 0,
+          turns: widget.isPlaying ? 1 : 0,
           duration: const Duration(seconds: 20),
           curve: Curves.linear,
-          child: ArtworkImage(
-            imageUri: song.artworkUri,
-            size: double.infinity,
-            borderRadius: 24,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.85, end: 1.0).animate(animation),
+                  child: child,
+                ),
+              );
+            },
+            child: ArtworkImage(
+              key: ValueKey(widget.song.id),
+              imageUri: widget.song.artworkUri,
+              albumId: widget.song.albumId,
+              size: double.infinity,
+              borderRadius: 24,
+            ),
           ),
         ),
       ),
@@ -154,22 +190,48 @@ class _PlayerContent extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         children: [
-          Text(
-            song.title,
-            style: theme.textTheme.headlineMedium,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.1),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              );
+            },
+            child: Text(
+              widget.song.title,
+              key: ValueKey('title_${widget.song.id}'),
+              style: theme.textTheme.headlineMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
           ),
           const SizedBox(height: 4),
-          Text(
-            song.artist,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.textTheme.bodyMedium?.color,
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+            child: Text(
+              widget.song.artist,
+              key: ValueKey('artist_${widget.song.id}'),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.textTheme.bodyMedium?.color,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -189,19 +251,19 @@ class _PlayerContent extends ConsumerWidget {
           thumbColor: theme.colorScheme.primary,
           overlayColor: theme.colorScheme.primary.withAlpha(30),
         ),
-        child: Slider(
-          value: position.inMilliseconds.toDouble().clamp(
-                0,
-                totalDuration.inMilliseconds.toDouble(),
-              ),
-          max: totalDuration.inMilliseconds.toDouble().clamp(
-            1,
-            double.infinity,
+          child: Slider(
+            value: widget.position.inMilliseconds.toDouble().clamp(
+                  0,
+                  totalDuration.inMilliseconds.toDouble(),
+                ),
+            max: totalDuration.inMilliseconds.toDouble().clamp(
+              1,
+              double.infinity,
+            ),
+            onChanged: (value) {
+              widget.audioService.seek(Duration(milliseconds: value.toInt()));
+            },
           ),
-          onChanged: (value) {
-            audioService.seek(Duration(milliseconds: value.toInt()));
-          },
-        ),
       ),
     );
   }
@@ -213,7 +275,7 @@ class _PlayerContent extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            Formatters.formatDurationShort(position),
+            Formatters.formatDurationShort(widget.position),
             style: theme.textTheme.bodySmall,
           ),
           Text(
@@ -233,29 +295,34 @@ class _PlayerContent extends ConsumerWidget {
         children: [
           _ControlButton(
             icon: Icons.shuffle_rounded,
-            isActive: audioService.isShuffleMode,
+            isActive: widget.audioService.isShuffleMode,
             size: 28,
-            onTap: () => audioService.toggleShuffle(),
+            onTap: () => widget.audioService.toggleShuffle(),
           ),
           _ControlButton(
             icon: Icons.skip_previous_rounded,
             size: 36,
-            onTap: () => audioService.seekToPrevious(),
+            onTap: () => widget.audioService.seekToPrevious(),
           ),
           _PlayPauseButton(
-            isPlaying: isPlaying,
-            onTap: () => audioService.togglePlayPause(),
+            isPlaying: widget.isPlaying,
+            onTap: () {
+              _playPauseController.forward().then((_) {
+                _playPauseController.reverse();
+                widget.audioService.togglePlayPause();
+              });
+            },
           ),
           _ControlButton(
             icon: Icons.skip_next_rounded,
             size: 36,
-            onTap: () => audioService.seekToNext(),
+            onTap: () => widget.audioService.seekToNext(),
           ),
           _ControlButton(
-            icon: _getLoopIcon(audioService.loopMode),
-            isActive: audioService.loopMode != LoopMode.off,
+            icon: _getLoopIcon(widget.audioService.loopMode),
+            isActive: widget.audioService.loopMode != LoopMode.off,
             size: 28,
-            onTap: () => audioService.cycleLoopMode(),
+            onTap: () => widget.audioService.cycleLoopMode(),
           ),
         ],
       ),
@@ -301,7 +368,7 @@ class _PlayPauseButton extends StatelessWidget {
         ),
         child: Icon(
           isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-          color: Colors.white,
+          color: theme.colorScheme.onPrimary,
           size: 40,
         ),
       ),

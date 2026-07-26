@@ -30,7 +30,7 @@ class MiniPlayerWidget extends ConsumerWidget {
             color: theme.bottomNavigationBarTheme.backgroundColor,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withAlpha(15),
+                color: theme.shadowColor.withAlpha(15),
                 blurRadius: 8,
                 offset: const Offset(0, -2),
               ),

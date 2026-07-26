@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/service_locator.dart';
 import '../services/settings/settings_service.dart';
 
 final settingsServiceProvider = Provider<SettingsService>((ref) {
-  final service = SettingsService();
-  service.init();
-  ref.onDispose(() => service.dispose());
-  return service;
+  return settingsService;
 });
 
-final themeModeProvider = Provider<ThemeMode>((ref) {
+final themeModeStreamProvider = StreamProvider<ThemeMode>((ref) {
   final service = ref.watch(settingsServiceProvider);
-  return service.themeMode;
+  return service.themeModeStream;
+});
+
+final currentThemeModeProvider = Provider<ThemeMode>((ref) {
+  return settingsService.themeMode;
 });
 
 final themePreferenceProvider = Provider<ThemePreference>((ref) {
-  final service = ref.watch(settingsServiceProvider);
-  return service.themePreference;
+  return settingsService.themePreference;
 });
 
 final sortPreferenceProvider = Provider<SortPreference>((ref) {
-  final service = ref.watch(settingsServiceProvider);
-  return service.sortPreference;
+  return settingsService.sortPreference;
 });

@@ -1,13 +1,16 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
+import 'theme/pixel_art_theme.dart';
 import '../core/service_locator.dart';
-import '../providers/settings_provider.dart';
 import '../services/audio/audio_player_service.dart';
 import '../services/audio/audio_handler.dart';
 import '../services/history/history_service.dart';
+import '../services/settings/settings_service.dart';
 import '../screens/splash/splash_screen.dart';
 
 class MusixPlayerApp extends StatefulWidget {
@@ -29,6 +32,11 @@ class _MusixPlayerAppState extends State<MusixPlayerApp> {
 
   Future<void> _initServices() async {
     try {
+      await SharedPreferences.getInstance();
+
+      settingsService = SettingsService();
+      await settingsService.init();
+
       historyService = HistoryService();
       await historyService.init();
 
@@ -80,18 +88,49 @@ class _MusixPlayerAppState extends State<MusixPlayerApp> {
   }
 }
 
-class _AppWithTheme extends ConsumerWidget {
+class _AppWithTheme extends ConsumerStatefulWidget {
   const _AppWithTheme();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
+  ConsumerState<_AppWithTheme> createState() => _AppWithThemeState();
+}
+
+class _AppWithThemeState extends ConsumerState<_AppWithTheme> {
+  late ThemeMode _themeMode;
+  StreamSubscription<ThemeMode>? _themeSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _themeMode = settingsService.themeMode;
+    _themeSub = settingsService.themeModeStream.listen((mode) {
+      if (mounted) {
+        setState(() => _themeMode = mode);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _themeSub?.cancel();
+    super.dispose();
+  }
+
+  ThemeData _darkTheme() {
+    if (settingsService.themePreference == ThemePreference.pixelArt) {
+      return AppThemePixelArt.theme;
+    }
+    return AppTheme.dark;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Musix Player',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: themeMode,
+      darkTheme: _darkTheme(),
+      themeMode: _themeMode,
       routerConfig: router,
     );
   }
