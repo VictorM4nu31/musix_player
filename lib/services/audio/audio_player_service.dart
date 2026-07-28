@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:just_audio/just_audio.dart';
 import '../../data/models/song_model.dart';
+import 'playback_navigator.dart';
 
 class AudioPlayerService {
   AudioPlayerService() {
@@ -169,22 +170,23 @@ class AudioPlayerService {
 
   Future<void> seek(Duration position) async => _player.seek(position);
 
-  Future<void> seekToNext() async {
-    if (_isBlacklisted != null) {
-      await _skipToNextNonBlacklisted();
-      return;
-    }
-    if (_player.hasNext) {
-      await _player.seekToNext();
-    }
-  }
+  Future<void> seekToNext() => _navigateNext(NavigationReason.user);
 
   Future<void> seekToPrevious() async {
+    if (_queue.isEmpty || _currentIndex < 0) return;
     if (_player.position > const Duration(seconds: 3)) {
       await _player.seek(Duration.zero);
-    } else if (_player.hasPrevious) {
-      await _player.seekToPrevious();
+      return;
     }
+    final target = PlaybackNavigator.resolvePrevious(
+      effectiveOrder: _effectiveOrder(),
+      currentIndex: _currentIndex,
+      loopMode: _loopMode,
+      isPlayable: _isPlayableIndex,
+    );
+    if (target == null) return;
+    await seekToIndex(target);
+    await _player.play();
   }
 
   Future<void> seekToIndex(int index) async {
@@ -220,56 +222,63 @@ class AudioPlayerService {
 
   void setLoopMode(LoopMode mode) {
     _loopMode = mode;
-    _player.setLoopMode(_loopMode);
+    _player.setLoopMode(mode == LoopMode.one ? LoopMode.one : LoopMode.off);
     _loopModeController.add(_loopMode);
   }
 
   void _handleSongComplete() {
-    if (_loopMode == LoopMode.one) {
-      _player.seek(Duration.zero);
-      _player.play();
-    } else if (_currentIndex < _queue.length - 1 ||
-        _loopMode == LoopMode.all) {
-      _skipToNextNonBlacklisted();
-    }
+    _navigateNext(NavigationReason.completed);
   }
 
-  Future<void> _skipToNextNonBlacklisted() async {
-    if (_queue.isEmpty) return;
+  List<int> _effectiveOrder() {
+    return PlaybackNavigator.effectiveOrder(
+      queueLength: _queue.length,
+      shuffleEnabled: _isShuffleMode,
+      shuffleIndices: _player.shuffleIndices,
+    );
+  }
 
-    if (_isBlacklisted == null) {
-      if (_player.hasNext) {
-        await _player.seekToNext();
-      } else if (_loopMode == LoopMode.all && _queue.isNotEmpty) {
-        await seekToIndex(0);
-        await _player.play();
+  bool _isPlayableIndex(int index) {
+    if (index < 0 || index >= _queue.length) return false;
+    final checker = _isBlacklisted;
+    if (checker == null) return true;
+    return !checker(_queue[index].id);
+  }
+
+  Future<void> _navigateNext(NavigationReason reason) async {
+    if (_queue.isEmpty || _currentIndex < 0) return;
+
+    final target = PlaybackNavigator.resolveNext(
+      effectiveOrder: _effectiveOrder(),
+      currentIndex: _currentIndex,
+      loopMode: _loopMode,
+      reason: reason,
+      isPlayable: _isPlayableIndex,
+    );
+
+    if (target == null) {
+      if (reason == NavigationReason.completed && _loopMode == LoopMode.off) {
+        await _player.pause();
       }
       return;
     }
 
-    int nextIndex = _currentIndex + 1;
-    final startIndex = nextIndex;
-
-    while (nextIndex < _queue.length) {
-      if (!_isBlacklisted!(_queue[nextIndex].id)) {
-        await seekToIndex(nextIndex);
-        await _player.play();
-        return;
-      }
-      nextIndex++;
+    if (target == _currentIndex &&
+        reason == NavigationReason.completed &&
+        _loopMode == LoopMode.one) {
+      await _player.seek(Duration.zero);
+      await _player.play();
+      return;
     }
 
-    if (_loopMode == LoopMode.all && startIndex > 0) {
-      nextIndex = 0;
-      while (nextIndex < startIndex) {
-        if (!_isBlacklisted!(_queue[nextIndex].id)) {
-          await seekToIndex(nextIndex);
-          await _player.play();
-          return;
-        }
-        nextIndex++;
-      }
+    if (target == _currentIndex && reason == NavigationReason.user) {
+      await _player.seek(Duration.zero);
+      await _player.play();
+      return;
     }
+
+    await seekToIndex(target);
+    await _player.play();
   }
 
   Future<void> addToQueue(SongModel song) async {
