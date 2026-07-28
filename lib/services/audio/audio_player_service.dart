@@ -14,7 +14,9 @@ class AudioPlayerService {
   bool _isShuffleMode = false;
   LoopMode _loopMode = LoopMode.off;
   bool Function(int songId)? _isBlacklisted;
+  void Function(bool shuffle, LoopMode loopMode)? onPlaybackModesChanged;
   bool _sourceLoaded = false;
+  bool _suppressModePersistence = false;
 
   final _queueController = StreamController<List<SongModel>>.broadcast();
   final _currentSongController = StreamController<SongModel?>.broadcast();
@@ -53,6 +55,57 @@ class AudioPlayerService {
 
   void setBlacklistChecker(bool Function(int songId) checker) {
     _isBlacklisted = checker;
+  }
+
+  /// Restores shuffle/loop without notifying [onPlaybackModesChanged].
+  void restorePlaybackModes({
+    required bool shuffle,
+    required LoopMode loopMode,
+  }) {
+    _suppressModePersistence = true;
+    try {
+      setShuffleMode(shuffle);
+      setLoopMode(loopMode);
+    } finally {
+      _suppressModePersistence = false;
+    }
+  }
+
+  /// Seeds in-memory queue without loading audio (tests / dry navigation).
+  void seedQueueForTest(List<SongModel> songs, {int currentIndex = 0}) {
+    _queue = List<SongModel>.from(songs);
+    if (_queue.isEmpty) {
+      _currentIndex = -1;
+    } else {
+      _currentIndex = currentIndex.clamp(0, _queue.length - 1);
+    }
+    _sourceLoaded = false;
+    _emitQueue();
+    _currentIndexController.add(_currentIndex);
+    _currentSongController.add(currentSong);
+  }
+
+  /// Next index that would play (no seek). Null if none.
+  int? peekNextIndex({NavigationReason reason = NavigationReason.user}) {
+    if (_queue.isEmpty || _currentIndex < 0) return null;
+    return PlaybackNavigator.resolveNext(
+      effectiveOrder: _effectiveOrder(),
+      currentIndex: _currentIndex,
+      loopMode: _loopMode,
+      reason: reason,
+      isPlayable: _isPlayableIndex,
+    );
+  }
+
+  /// Previous index that would play (no seek, ignores >3s restart). Null if none.
+  int? peekPreviousIndex() {
+    if (_queue.isEmpty || _currentIndex < 0) return null;
+    return PlaybackNavigator.resolvePrevious(
+      effectiveOrder: _effectiveOrder(),
+      currentIndex: _currentIndex,
+      loopMode: _loopMode,
+      isPlayable: _isPlayableIndex,
+    );
   }
 
   void _init() {
@@ -207,6 +260,7 @@ class AudioPlayerService {
     _isShuffleMode = enabled;
     _player.setShuffleModeEnabled(_isShuffleMode);
     _shuffleController.add(_isShuffleMode);
+    _notifyPlaybackModesChanged();
   }
 
   void cycleLoopMode() {
@@ -224,6 +278,12 @@ class AudioPlayerService {
     _loopMode = mode;
     _player.setLoopMode(mode == LoopMode.one ? LoopMode.one : LoopMode.off);
     _loopModeController.add(_loopMode);
+    _notifyPlaybackModesChanged();
+  }
+
+  void _notifyPlaybackModesChanged() {
+    if (_suppressModePersistence) return;
+    onPlaybackModesChanged?.call(_isShuffleMode, _loopMode);
   }
 
   void _handleSongComplete() {

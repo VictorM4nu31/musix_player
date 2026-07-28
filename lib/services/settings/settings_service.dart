@@ -11,6 +11,8 @@ class SettingsService {
   static const _themeKey = 'theme_preference';
   static const _sortKey = 'sort_preference';
   static const _animationKey = 'player_animation';
+  static const _shuffleKey = 'playback_shuffle';
+  static const _loopKey = 'playback_loop';
 
   final _controller = StreamController<ThemePreference>.broadcast();
   final _themeModeController = StreamController<ThemeMode>.broadcast();
@@ -20,6 +22,9 @@ class SettingsService {
   ThemePreference _themePreference = ThemePreference.system;
   SortPreference _sortPreference = SortPreference.title;
   PlayerAnimationType _playerAnimation = PlayerAnimationType.vinyl;
+  bool _shuffleEnabled = false;
+  /// Matches [LoopMode] index: 0=off, 1=one, 2=all.
+  int _loopModeIndex = 0;
 
   Stream<ThemePreference> get themeStream => _controller.stream;
   Stream<ThemeMode> get themeModeStream => _themeModeController.stream;
@@ -29,6 +34,8 @@ class SettingsService {
   ThemePreference get themePreference => _themePreference;
   SortPreference get sortPreference => _sortPreference;
   PlayerAnimationType get playerAnimation => _playerAnimation;
+  bool get shuffleEnabled => _shuffleEnabled;
+  int get loopModeIndex => _loopModeIndex;
 
   ThemeMode get themeMode {
     switch (_themePreference) {
@@ -64,6 +71,10 @@ class SettingsService {
       _playerAnimation = PlayerAnimationType.values[animIndex];
     }
 
+    _shuffleEnabled = prefs.getBool(_shuffleKey) ?? false;
+    final loopIndex = prefs.getInt(_loopKey) ?? 0;
+    _loopModeIndex = (loopIndex >= 0 && loopIndex <= 2) ? loopIndex : 0;
+
     _controller.add(_themePreference);
     _themeModeController.add(themeMode);
     _sortController.add(_sortPreference);
@@ -90,6 +101,19 @@ class SettingsService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_animationKey, animation.index);
     _animationController.add(_playerAnimation);
+  }
+
+  Future<void> setShuffleEnabled(bool enabled) async {
+    _shuffleEnabled = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_shuffleKey, enabled);
+  }
+
+  /// [index] must match just_audio LoopMode: 0=off, 1=one, 2=all.
+  Future<void> setLoopModeIndex(int index) async {
+    _loopModeIndex = (index >= 0 && index <= 2) ? index : 0;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_loopKey, _loopModeIndex);
   }
 
   Future<void> dispose() async {

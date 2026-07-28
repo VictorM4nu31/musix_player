@@ -297,5 +297,30 @@ void main() {
         1,
       );
     });
+
+    test('loop all previous skips blacklist on wrap', () {
+      expect(
+        PlaybackNavigator.resolvePrevious(
+          effectiveOrder: linear,
+          currentIndex: 0,
+          loopMode: LoopMode.all,
+          isPlayable: playableExcept({4, 3}),
+        ),
+        2,
+      );
+    });
+
+    test('loop all next skips blacklist on wrap', () {
+      expect(
+        PlaybackNavigator.resolveNext(
+          effectiveOrder: linear,
+          currentIndex: 4,
+          loopMode: LoopMode.all,
+          reason: NavigationReason.user,
+          isPlayable: playableExcept({0, 1}),
+        ),
+        2,
+      );
+    });
   });
 }

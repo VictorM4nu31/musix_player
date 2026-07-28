@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
@@ -71,6 +72,18 @@ class _MusixPlayerAppState extends State<MusixPlayerApp> {
 
       audioService = AudioPlayerService();
       audioService.setBlacklistChecker(blacklistService.isBlacklisted);
+      final loopValues = LoopMode.values;
+      final savedLoop = settingsService.loopModeIndex;
+      audioService.restorePlaybackModes(
+        shuffle: settingsService.shuffleEnabled,
+        loopMode: (savedLoop >= 0 && savedLoop < loopValues.length)
+            ? loopValues[savedLoop]
+            : LoopMode.off,
+      );
+      audioService.onPlaybackModesChanged = (shuffle, loopMode) {
+        settingsService.setShuffleEnabled(shuffle);
+        settingsService.setLoopModeIndex(loopMode.index);
+      };
 
       _songSub = audioService.currentSongStream.listen((song) {
         if (song == null) {
