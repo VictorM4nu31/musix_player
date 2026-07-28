@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../app/theme/theme_tokens.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
@@ -138,14 +139,21 @@ class _QueueTile extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
           color: theme.colorScheme.error,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(
+            theme.extension<MusixThemeTokens>()?.radiusMd ?? 12,
+          ),
         ),
-        child: const Icon(Icons.delete_rounded, color: Colors.white),
+        child: Icon(
+          Icons.delete_rounded,
+          color: theme.colorScheme.onError,
+        ),
       ),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(
+            theme.extension<MusixThemeTokens>()?.radiusMd ?? 12,
+          ),
           color: isCurrentSong
               ? theme.colorScheme.primary.withAlpha(25)
               : Colors.transparent,

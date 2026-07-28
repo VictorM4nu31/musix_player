@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/theme_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/widgets/empty_state.dart';
@@ -254,7 +255,17 @@ class _PlaylistTile extends StatelessWidget {
         height: 56,
         decoration: BoxDecoration(
           color: theme.colorScheme.primaryContainer,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(
+            context.musixThemeOrNull?.radiusMd ?? 12,
+          ),
+          border: () {
+            final t = context.musixThemeOrNull;
+            if (t?.borderColor == null) return null;
+            return Border.all(
+              color: t!.borderColor!,
+              width: t.borderWidth,
+            );
+          }(),
         ),
         child: Icon(
           Icons.queue_music_rounded,

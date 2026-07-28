@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/definitions/light_theme.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -46,20 +47,20 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF5C6BC0),
-    );
+    // Pre-theme bootstrap: uses light brand tokens (no ThemeExtension yet).
+    const primary = LightThemeColors.primary;
+    const onPrimary = Colors.white;
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              colorScheme.primary,
-              colorScheme.primary.withAlpha(180),
-              colorScheme.primaryContainer,
+              primary,
+              Color(0xFF7986CB),
+              Color(0xFF9FA8DA),
             ],
           ),
         ),
@@ -73,7 +74,7 @@ class _SplashScreenState extends State<SplashScreen>
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: onPrimary,
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
@@ -83,10 +84,10 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ],
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.music_note_rounded,
                     size: 56,
-                    color: colorScheme.primary,
+                    color: primary,
                   ),
                 ),
               ),
@@ -100,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen>
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: onPrimary,
                         letterSpacing: 1.2,
                       ),
                     ),
@@ -109,7 +110,7 @@ class _SplashScreenState extends State<SplashScreen>
                       'Tu música, tu estilo',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white.withAlpha(200),
+                        color: onPrimary.withAlpha(200),
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -122,7 +123,7 @@ class _SplashScreenState extends State<SplashScreen>
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  color: Colors.white.withAlpha(200),
+                  color: onPrimary.withAlpha(200),
                 ),
               ),
             ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme/theme_tokens.dart';
 import '../../core/widgets/artwork_image.dart';
+import '../../core/widgets/pixel_effects.dart';
 import '../../providers/audio_provider.dart';
 
 class MiniPlayerWidget extends ConsumerWidget {
@@ -29,8 +30,22 @@ class MiniPlayerWidget extends ConsumerWidget {
             theme.bottomNavigationBarTheme.backgroundColor;
         final artRadius = tokens?.artworkRadius ?? 8;
         final borderColor = tokens?.borderColor;
+        final borderWidth = tokens?.borderWidth ?? 0;
         final animDuration =
             tokens?.mediumAnim ?? const Duration(milliseconds: 300);
+
+        Widget playIcon = Icon(
+          playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+          color: theme.colorScheme.primary,
+          size: 32,
+        );
+        if (tokens?.glowColor != null && playing) {
+          playIcon = GlowEffect(
+            color: tokens!.glowColor,
+            radius: 6,
+            child: playIcon,
+          );
+        }
 
         return Semantics(
           label: 'Reproduciendo ${song.title} de ${song.artist}',
@@ -38,12 +53,9 @@ class MiniPlayerWidget extends ConsumerWidget {
             height: 64,
             decoration: BoxDecoration(
               color: bg,
-              border: borderColor != null && (tokens?.borderWidth ?? 0) > 0
+              border: borderColor != null && borderWidth > 0
                   ? Border(
-                      top: BorderSide(
-                        color: borderColor,
-                        width: tokens!.borderWidth,
-                      ),
+                      top: BorderSide(color: borderColor, width: borderWidth),
                     )
                   : null,
               boxShadow: tokens?.cardShadows.isNotEmpty == true
@@ -101,13 +113,7 @@ class MiniPlayerWidget extends ConsumerWidget {
                       IconButton(
                         tooltip: playing ? 'Pausar' : 'Reproducir',
                         onPressed: () => audioService.togglePlayPause(),
-                        icon: Icon(
-                          playing
-                              ? Icons.pause_rounded
-                              : Icons.play_arrow_rounded,
-                          color: theme.colorScheme.primary,
-                          size: 32,
-                        ),
+                        icon: playIcon,
                       ),
                       IconButton(
                         tooltip: 'Siguiente',

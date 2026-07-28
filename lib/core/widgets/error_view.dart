@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/theme_tokens.dart';
 
 class ErrorView extends StatelessWidget {
   const ErrorView({
@@ -20,18 +21,32 @@ class ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: theme.colorScheme.error.withAlpha(20),
-              ),
-              child: Icon(
-                Icons.error_outline_rounded,
-                size: 56,
-                color: theme.colorScheme.error.withAlpha(200),
-              ),
+            Builder(
+              builder: (context) {
+                final tokens = context.musixThemeOrNull;
+                final sharp = (tokens?.radiusMd ?? 16) <= 2;
+                return Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: sharp ? BoxShape.rectangle : BoxShape.circle,
+                    borderRadius:
+                        sharp ? BorderRadius.circular(tokens!.radiusMd) : null,
+                    color: theme.colorScheme.error.withAlpha(20),
+                    border: tokens?.borderColor != null
+                        ? Border.all(
+                            color: theme.colorScheme.error.withAlpha(120),
+                            width: 2,
+                          )
+                        : null,
+                  ),
+                  child: Icon(
+                    Icons.error_outline_rounded,
+                    size: 56,
+                    color: theme.colorScheme.error.withAlpha(200),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 24),
             Text(

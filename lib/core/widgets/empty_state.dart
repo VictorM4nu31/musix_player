@@ -63,7 +63,9 @@ class _EmptyStateState extends State<EmptyState>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tokens = context.musixThemeOrNull;
-    final isPixelArt = tokens?.isPixelArt ?? false;
+    // Style empty states from tokens (borders/radii), not color heuristics.
+    final isPixelArt = tokens?.isPixelArt == true ||
+        (tokens != null && tokens.borderWidth >= 2 && tokens.radiusMd <= 4);
 
     return Center(
       child: FadeTransition(

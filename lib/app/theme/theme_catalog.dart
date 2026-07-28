@@ -8,6 +8,8 @@ import 'definitions/pixel_art_theme.dart';
 import 'theme_definition.dart';
 import 'theme_id.dart';
 
+// light/dark definitions used for system previewColors.
+
 /// Central registry of all app themes.
 abstract final class ThemeCatalog {
   static final Map<ThemeId, ThemeDefinition> _byId = {
@@ -43,14 +45,12 @@ abstract final class ThemeCatalog {
     return def;
   }
 
-  /// Preview swatches for selector cards (system uses light+dark blend).
+  /// Preview swatches for selector cards (system blends light + dark tokens).
   static List<Color> previewColors(ThemeId id) {
     if (id == ThemeId.system) {
-      return const [
-        Color(0xFF5C6BC0),
-        Color(0xFFFFFFFF),
-        Color(0xFF161726),
-      ];
+      final light = lightThemeDefinition.previewColors;
+      final dark = darkThemeDefinition.previewColors;
+      return [light[0], light[1], dark[1]];
     }
     return requireDefinition(id).previewColors;
   }

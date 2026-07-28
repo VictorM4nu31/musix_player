@@ -30,10 +30,14 @@ final ThemeDefinition amoledThemeDefinition = ThemeDefinition(
     radiusLg: 16,
     borderWidth: 0,
     miniPlayerBackground: AmoledThemeColors.miniPlayer,
-    playerGradientStart: AmoledThemeColors.primary.withAlpha(30),
-    playerGradientEnd: AmoledThemeColors.scaffold,
+    // Pure black surfaces — minimal accent wash only.
+    playerGradientStart: const Color(0xFF000000),
+    playerGradientEnd: const Color(0xFF000000),
+    playButtonSize: 64,
     playButtonRadius: BorderRadius.circular(32),
     artworkRadius: 10,
+    cardShadows: const [],
+    controlShadows: const [],
     previewColors: const [
       AmoledThemeColors.primary,
       AmoledThemeColors.scaffold,
@@ -67,6 +71,13 @@ final ThemeDefinition amoledThemeDefinition = ThemeDefinition(
       snackBarBackground: AmoledThemeColors.card,
       snackBarForeground: AmoledThemeColors.textPrimary,
       cardElevation: 0,
+      navThemeOverride: const BottomNavigationBarThemeData(
+        backgroundColor: AmoledThemeColors.background,
+        selectedItemColor: AmoledThemeColors.primary,
+        unselectedItemColor: AmoledThemeColors.textSecondary,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+      ),
     );
   },
 );

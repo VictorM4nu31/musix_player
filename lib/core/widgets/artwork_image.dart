@@ -104,8 +104,13 @@ class _ArtworkImageState extends State<ArtworkImage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tokens = context.musixThemeOrNull;
-    final isPixelArt = tokens?.isPixelArt ?? false;
-    final radius = tokens?.artworkRadius ?? widget.borderRadius;
+    // Callers pass vinyl circle (999) or layout-specific radii; otherwise theme.
+    final radius = widget.borderRadius >= 100
+        ? widget.borderRadius
+        : (tokens?.artworkRadius ?? widget.borderRadius);
+    final outlined = tokens?.borderColor != null &&
+        (tokens?.borderWidth ?? 0) > 0 &&
+        radius < 100;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -116,10 +121,10 @@ class _ArtworkImageState extends State<ArtworkImage> {
           height: effectiveSize > 0 ? effectiveSize : widget.size,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(radius),
-            color: isPixelArt
+            color: outlined
                 ? theme.colorScheme.surface
                 : theme.colorScheme.primary.withAlpha(30),
-            border: isPixelArt && tokens?.borderColor != null
+            border: outlined
                 ? Border.all(
                     color: tokens!.borderColor!,
                     width: tokens.borderWidth,
@@ -127,13 +132,21 @@ class _ArtworkImageState extends State<ArtworkImage> {
                 : null,
           ),
           clipBehavior: Clip.antiAlias,
-          child: _buildContent(theme, isPixelArt, effectiveSize > 0 ? effectiveSize : widget.size),
+          child: _buildContent(
+            theme,
+            tokens,
+            effectiveSize > 0 ? effectiveSize : widget.size,
+          ),
         );
       },
     );
   }
 
-  Widget _buildContent(ThemeData theme, bool isPixelArt, double effectiveSize) {
+  Widget _buildContent(
+    ThemeData theme,
+    MusixThemeTokens? tokens,
+    double effectiveSize,
+  ) {
     if (_isLoading) {
       return Center(
         child: SizedBox(
@@ -152,10 +165,11 @@ class _ArtworkImageState extends State<ArtworkImage> {
         return Image.memory(
           _bytes!,
           fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _buildPlaceholder(theme, isPixelArt, effectiveSize),
+          errorBuilder: (_, _, _) =>
+              _buildPlaceholder(theme, tokens, effectiveSize),
         );
       } catch (_) {
-        return _buildPlaceholder(theme, isPixelArt, effectiveSize);
+        return _buildPlaceholder(theme, tokens, effectiveSize);
       }
     }
 
@@ -181,16 +195,21 @@ class _ArtworkImageState extends State<ArtworkImage> {
               ),
             );
           },
-          errorBuilder: (_, _, _) => _buildPlaceholder(theme, isPixelArt, effectiveSize),
+          errorBuilder: (_, _, _) =>
+              _buildPlaceholder(theme, tokens, effectiveSize),
         );
       }
     }
 
-    return _buildPlaceholder(theme, isPixelArt, effectiveSize);
+    return _buildPlaceholder(theme, tokens, effectiveSize);
   }
 
-  Widget _buildPlaceholder(ThemeData theme, bool isPixelArt, double effectiveSize) {
-    if (isPixelArt) {
+  Widget _buildPlaceholder(
+    ThemeData theme,
+    MusixThemeTokens? tokens,
+    double effectiveSize,
+  ) {
+    if (tokens?.isPixelArt == true || tokens?.preferFrameSteppedMotion == true) {
       return Container(
         color: theme.colorScheme.surface,
         child: CustomPaint(

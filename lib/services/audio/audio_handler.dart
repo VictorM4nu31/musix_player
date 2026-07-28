@@ -4,6 +4,14 @@ import 'package:just_audio/just_audio.dart';
 import '../../data/models/song_model.dart';
 import 'audio_player_service.dart';
 
+/// Bridges [AudioPlayerService] to Android MediaSession / notification / lock screen.
+///
+/// Theming limits (OS-controlled — do not attempt to pixel/cyberpunk these):
+/// - Notification layout & typography: Android MediaStyle
+/// - Lock screen chrome: system MediaSession UI
+/// - App can set: title/artist/album/art via [MediaItem], and
+///   [AudioServiceConfig.notificationColor] (accent) at service init only.
+/// Changing Flutter theme at runtime must never reset this handler or the queue.
 class MusixAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
   MusixAudioHandler(this._audioService) {
     _init();

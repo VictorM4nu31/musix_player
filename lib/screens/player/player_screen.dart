@@ -313,6 +313,18 @@ class _PlayerArtwork extends StatelessWidget {
         : themeRadius;
     final duration = tokens?.mediumAnim ?? const Duration(milliseconds: 350);
 
+    // ArtworkImage applies token border/radius; optional glow for themed chrome.
+    Widget art = ArtworkImage(
+      key: ValueKey(song.id),
+      imageUri: song.artworkUri,
+      albumId: song.albumId,
+      size: double.infinity,
+      borderRadius: radius,
+    );
+    if (tokens?.glowColor != null && isPlaying) {
+      art = GlowEffect(color: tokens!.glowColor, radius: 12, child: art);
+    }
+
     return SizedBox(
       width: side,
       height: side,
@@ -338,13 +350,7 @@ class _PlayerArtwork extends StatelessWidget {
               ),
             );
           },
-          child: ArtworkImage(
-            key: ValueKey(song.id),
-            imageUri: song.artworkUri,
-            albumId: song.albumId,
-            size: double.infinity,
-            borderRadius: radius,
-          ),
+          child: art,
         ),
       ),
     );

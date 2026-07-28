@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../app/theme/theme_tokens.dart';
 import '../../core/service_locator.dart';
 import '../../data/models/song_model.dart';
 import '../../providers/songs_provider.dart';
@@ -109,11 +110,11 @@ class _SongEditScreenState extends ConsumerState<SongEditScreen> {
         Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
+          SnackBar(
+            content: const Text(
               'No se pudieron guardar. En algunos dispositivos solo se puede editar la base MediaStore, no las etiquetas del archivo.',
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -122,7 +123,7 @@ class _SongEditScreenState extends ConsumerState<SongEditScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -178,7 +179,9 @@ class _SongEditScreenState extends ConsumerState<SongEditScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primary.withAlpha(20),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(
+                      context.musixThemeOrNull?.radiusMd ?? 12,
+                    ),
                   ),
                   child: Row(
                     children: [

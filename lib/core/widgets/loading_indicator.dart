@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/theme_tokens.dart';
 
 class LoadingIndicator extends StatefulWidget {
   const LoadingIndicator({super.key, this.message});
@@ -41,6 +42,8 @@ class _LoadingIndicatorState extends State<LoadingIndicator>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = context.musixThemeOrNull;
+    final sharp = (tokens?.radiusMd ?? 16) <= 2;
 
     return Center(
       child: Column(
@@ -52,8 +55,15 @@ class _LoadingIndicatorState extends State<LoadingIndicator>
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
+                shape: sharp ? BoxShape.rectangle : BoxShape.circle,
+                borderRadius: sharp ? BorderRadius.circular(tokens!.radiusMd) : null,
                 color: theme.colorScheme.primary.withAlpha(20),
+                border: tokens?.borderColor != null
+                    ? Border.all(
+                        color: tokens!.borderColor!.withAlpha(100),
+                        width: tokens.borderWidth > 0 ? tokens.borderWidth : 1,
+                      )
+                    : null,
               ),
               child: Center(
                 child: CircularProgressIndicator(
