@@ -1,65 +1,59 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../app/theme/theme_catalog.dart';
+import '../../app/theme/theme_definition.dart';
+import '../../app/theme/theme_id.dart';
 import '../../core/widgets/player_animations/animation_type.dart';
 
-enum ThemePreference { system, light, dark, pixelArt }
+export '../../app/theme/theme_id.dart' show ThemeId, ThemePreference;
 
 enum SortPreference { title, artist, album, duration }
 
 class SettingsService {
-  static const _themeKey = 'theme_preference';
+  static const _themeKeyLegacy = 'theme_preference';
+  static const _themeIdKey = 'theme_id';
   static const _sortKey = 'sort_preference';
   static const _animationKey = 'player_animation';
   static const _shuffleKey = 'playback_shuffle';
   static const _loopKey = 'playback_loop';
 
-  final _controller = StreamController<ThemePreference>.broadcast();
+  final _controller = StreamController<ThemeId>.broadcast();
   final _themeModeController = StreamController<ThemeMode>.broadcast();
   final _sortController = StreamController<SortPreference>.broadcast();
   final _animationController = StreamController<PlayerAnimationType>.broadcast();
 
-  ThemePreference _themePreference = ThemePreference.system;
+  ThemeId _themePreference = ThemeId.system;
   SortPreference _sortPreference = SortPreference.title;
   PlayerAnimationType _playerAnimation = PlayerAnimationType.vinyl;
   bool _shuffleEnabled = false;
+
   /// Matches [LoopMode] index: 0=off, 1=one, 2=all.
   int _loopModeIndex = 0;
 
-  Stream<ThemePreference> get themeStream => _controller.stream;
+  Stream<ThemeId> get themeStream => _controller.stream;
   Stream<ThemeMode> get themeModeStream => _themeModeController.stream;
   Stream<SortPreference> get sortStream => _sortController.stream;
   Stream<PlayerAnimationType> get animationStream => _animationController.stream;
 
-  ThemePreference get themePreference => _themePreference;
+  ThemeId get themePreference => _themePreference;
+  ThemeId get themeId => _themePreference;
   SortPreference get sortPreference => _sortPreference;
   PlayerAnimationType get playerAnimation => _playerAnimation;
   bool get shuffleEnabled => _shuffleEnabled;
   int get loopModeIndex => _loopModeIndex;
 
-  ThemeMode get themeMode {
-    switch (_themePreference) {
-      case ThemePreference.light:
-        return ThemeMode.light;
-      case ThemePreference.dark:
-        return ThemeMode.dark;
-      case ThemePreference.system:
-        return ThemeMode.system;
-      case ThemePreference.pixelArt:
-        return ThemeMode.dark;
-    }
-  }
+  ThemeMode get themeMode => ThemeCatalog.materialConfig(_themePreference).themeMode;
+
+  MaterialThemeConfig get materialThemeConfig =>
+      ThemeCatalog.materialConfig(_themePreference);
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
 
-    final themeIndex = prefs.getInt(_themeKey) ?? 0;
-    if (themeIndex >= 0 && themeIndex < ThemePreference.values.length) {
-      _themePreference = ThemePreference.values[themeIndex];
-    }
+    _themePreference = _loadThemeId(prefs);
 
     final sortIndex = prefs.getInt(_sortKey) ?? 0;
-    // Legacy index 4 was dateAdded — map to title.
     if (sortIndex >= 0 && sortIndex < SortPreference.values.length) {
       _sortPreference = SortPreference.values[sortIndex];
     } else {
@@ -81,13 +75,39 @@ class SettingsService {
     _animationController.add(_playerAnimation);
   }
 
-  Future<void> setThemePreference(ThemePreference preference) async {
+  ThemeId _loadThemeId(SharedPreferences prefs) {
+    final stored = ThemeId.tryParse(prefs.getString(_themeIdKey));
+    if (stored != null) return stored;
+
+    final legacy = prefs.getInt(_themeKeyLegacy);
+    if (legacy != null) {
+      final migrated = ThemeId.fromLegacyIndex(legacy);
+      // Fire-and-forget migration to string key.
+      prefs.setString(_themeIdKey, migrated.storageId);
+      return migrated;
+    }
+
+    return ThemeId.system;
+  }
+
+  Future<void> setThemePreference(ThemeId preference) async {
     _themePreference = preference;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_themeKey, preference.index);
+    await prefs.setString(_themeIdKey, preference.storageId);
+    // Keep legacy int in sync for older builds / rollback safety (capped ids).
+    final legacyIndex = switch (preference) {
+      ThemeId.system => 0,
+      ThemeId.light => 1,
+      ThemeId.dark => 2,
+      ThemeId.pixelArt => 3,
+      _ => preference.index,
+    };
+    await prefs.setInt(_themeKeyLegacy, legacyIndex);
     _controller.add(_themePreference);
     _themeModeController.add(themeMode);
   }
+
+  Future<void> setThemeId(ThemeId id) => setThemePreference(id);
 
   Future<void> setSortPreference(SortPreference preference) async {
     _sortPreference = preference;

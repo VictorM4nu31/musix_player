@@ -1,21 +1,25 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../app/theme/pixel_art_theme.dart';
+import '../../app/theme/theme_tokens.dart';
 
 class ScanlineOverlay extends StatelessWidget {
-  const ScanlineOverlay({super.key, this.opacity = 0.03});
+  const ScanlineOverlay({super.key, this.opacity});
 
-  final double opacity;
+  final double? opacity;
 
   @override
   Widget build(BuildContext context) {
-    final isPixelArt = Theme.of(context).brightness == Brightness.dark &&
-        Theme.of(context).scaffoldBackgroundColor == PixelArtColors.background;
-    if (!isPixelArt) return const SizedBox.shrink();
+    final tokens = context.musixThemeOrNull;
+    if (tokens == null || !tokens.enableScanlines) {
+      return const SizedBox.shrink();
+    }
+
+    final effectiveOpacity = opacity ?? tokens.scanlineOpacity;
+    if (effectiveOpacity <= 0) return const SizedBox.shrink();
 
     return IgnorePointer(
       child: CustomPaint(
-        painter: _ScanlinePainter(opacity: opacity),
+        painter: _ScanlinePainter(opacity: effectiveOpacity),
         child: const SizedBox.expand(),
       ),
     );
@@ -96,7 +100,9 @@ class _GlowEffectState extends State<GlowEffect>
           decoration: BoxDecoration(
             boxShadow: [
               BoxShadow(
-                color: (widget.color ?? PixelArtColors.glow)
+                color: (widget.color ??
+                        context.musixThemeOrNull?.glowColor ??
+                        Theme.of(context).colorScheme.primary)
                     .withAlpha((_glowAnimation.value * 60).round()),
                 blurRadius: widget.radius,
                 spreadRadius: 1,
@@ -151,8 +157,7 @@ class _PixelAppearTransitionState extends State<PixelAppearTransition>
 
   @override
   Widget build(BuildContext context) {
-    final isPixelArt = Theme.of(context).brightness == Brightness.dark &&
-        Theme.of(context).scaffoldBackgroundColor == PixelArtColors.background;
+    final isPixelArt = context.musixThemeOrNull?.isPixelArt ?? false;
 
     if (!isPixelArt) {
       return FadeTransition(

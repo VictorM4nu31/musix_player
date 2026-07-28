@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../app/theme/pixel_art_theme.dart';
+import '../../app/theme/theme_tokens.dart';
 
 class PixelEmptyState extends StatefulWidget {
   const PixelEmptyState({
@@ -52,12 +52,12 @@ class _PixelEmptyStateState extends State<PixelEmptyState>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isPixelArt = theme.brightness == Brightness.dark &&
-        theme.scaffoldBackgroundColor == PixelArtColors.background;
-
-    if (!isPixelArt) {
+    final tokens = context.musixThemeOrNull;
+    if (tokens == null || !tokens.isPixelArt) {
       return const SizedBox.shrink();
     }
+
+    final border = tokens.borderColor ?? theme.colorScheme.primary;
 
     return AnimatedBuilder(
       animation: _controller,
@@ -76,17 +76,17 @@ class _PixelEmptyStateState extends State<PixelEmptyState>
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(tokens.radiusMd),
                         border: Border.all(
-                          color: PixelArtColors.border.withAlpha(80),
-                          width: 2,
+                          color: border.withAlpha(80),
+                          width: tokens.borderWidth > 0 ? tokens.borderWidth : 2,
                         ),
-                        color: PixelArtColors.card,
+                        color: theme.colorScheme.surface,
                       ),
                       child: CustomPaint(
                         painter: _PixelIconPainter(
                           icon: widget.icon,
-                          color: PixelArtColors.primary.withAlpha(150),
+                          color: theme.colorScheme.primary.withAlpha(150),
                           size: 120,
                         ),
                       ),
@@ -97,8 +97,7 @@ class _PixelEmptyStateState extends State<PixelEmptyState>
                 Text(
                   widget.title,
                   style: theme.textTheme.titleLarge?.copyWith(
-                    color: PixelArtColors.primary,
-                    fontFamily: 'monospace',
+                    color: theme.colorScheme.primary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -106,9 +105,7 @@ class _PixelEmptyStateState extends State<PixelEmptyState>
                   const SizedBox(height: 8),
                   Text(
                     widget.subtitle!,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: PixelArtColors.textSecondary,
-                    ),
+                    style: theme.textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -136,25 +133,25 @@ class _PixelActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = context.musixThemeOrNull;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
-          color: PixelArtColors.primary,
-          borderRadius: BorderRadius.circular(4),
+          color: theme.colorScheme.primary,
+          borderRadius: BorderRadius.circular(tokens?.radiusMd ?? 4),
           border: Border.all(
-            color: PixelArtColors.primary.withAlpha(150),
+            color: theme.colorScheme.primary.withAlpha(150),
             width: 2,
           ),
         ),
         child: Text(
           label,
-          style: const TextStyle(
-            color: PixelArtColors.background,
-            fontFamily: 'monospace',
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.onPrimary,
             fontWeight: FontWeight.w600,
-            fontSize: 14,
           ),
         ),
       ),

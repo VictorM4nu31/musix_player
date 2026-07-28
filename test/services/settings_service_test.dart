@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:musix_player/app/theme/theme_id.dart';
 import 'package:musix_player/services/settings/settings_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,6 +15,7 @@ void main() {
     await service.init();
     expect(service.shuffleEnabled, isFalse);
     expect(service.loopModeIndex, 0);
+    expect(service.themePreference, ThemeId.system);
     await service.dispose();
   });
 
@@ -49,5 +51,54 @@ void main() {
     expect(service.shuffleEnabled, isTrue);
     expect(service.loopModeIndex, 1);
     await service.dispose();
+  });
+
+  test('persists theme id as string', () async {
+    final first = SettingsService();
+    await first.init();
+    await first.setThemePreference(ThemeId.pixelArt);
+    await first.dispose();
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('theme_id'), 'pixelArt');
+
+    final second = SettingsService();
+    await second.init();
+    expect(second.themePreference, ThemeId.pixelArt);
+    await second.dispose();
+  });
+
+  test('migrates legacy theme_preference index', () async {
+    SharedPreferences.setMockInitialValues({
+      'theme_preference': 3,
+    });
+    final service = SettingsService();
+    await service.init();
+    expect(service.themePreference, ThemeId.pixelArt);
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('theme_id'), 'pixelArt');
+    await service.dispose();
+  });
+
+  test('loads all custom theme ids', () async {
+    for (final id in [
+      ThemeId.amoled,
+      ThemeId.cyberpunk,
+      ThemeId.minimal,
+      ThemeId.dark,
+      ThemeId.light,
+    ]) {
+      SharedPreferences.setMockInitialValues({});
+      final service = SettingsService();
+      await service.init();
+      await service.setThemePreference(id);
+      await service.dispose();
+
+      final reloaded = SettingsService();
+      await reloaded.init();
+      expect(reloaded.themePreference, id);
+      await reloaded.dispose();
+    }
   });
 }

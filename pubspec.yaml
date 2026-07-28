@@ -21,9 +21,6 @@ dependencies:
   # Persistence
   shared_preferences: ^2.3.4
 
-  # Google Fonts
-  google_fonts: ^6.2.1
-
   # Device access & permissions
   permission_handler: ^11.3.1
   device_info_plus: ^13.2.0
@@ -46,3 +43,19 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  fonts:
+    - family: PressStart2P
+      fonts:
+        - asset: assets/fonts/PressStart2P-Regular.ttf
+    - family: ShareTechMono
+      fonts:
+        - asset: assets/fonts/ShareTechMono-Regular.ttf
+    - family: Orbitron
+      fonts:
+        - asset: assets/fonts/Orbitron-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Orbitron-Regular.ttf
+          weight: 600
+        - asset: assets/fonts/Orbitron-Regular.ttf
+          weight: 700

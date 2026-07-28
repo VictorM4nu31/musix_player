@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../app/theme/theme_tokens.dart';
 
 class AnimatedFavoriteButton extends StatefulWidget {
   const AnimatedFavoriteButton({
@@ -53,9 +54,10 @@ class _AnimatedFavoriteButtonState extends State<AnimatedFavoriteButton>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = context.musixThemeOrNull;
     final iconColor = widget.isFavorite
-        ? const Color(0xFFE53935)
-        : theme.iconTheme.color ?? Colors.grey;
+        ? (tokens?.favoriteColor ?? theme.colorScheme.error)
+        : theme.iconTheme.color ?? theme.colorScheme.onSurface.withAlpha(160);
 
     return GestureDetector(
       onTap: () => widget.onChanged?.call(!widget.isFavorite),

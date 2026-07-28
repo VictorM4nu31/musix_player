@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/theme_tokens.dart';
 import '../constants/app_constants.dart';
 import '../utils/formatters.dart';
 import 'artwork_image.dart';
@@ -34,21 +35,30 @@ class SongTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = context.musixThemeOrNull;
+    final cardRadius = tokens?.radiusMd ?? AppConstants.cardBorderRadius;
+    final artRadius = tokens?.artworkRadius ?? AppConstants.artworkBorderRadius;
 
     return InkWell(
       onTap: onTap,
       onLongPress: onLongPress,
-      borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
+      borderRadius: BorderRadius.circular(cardRadius),
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 10,
         ),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
+          borderRadius: BorderRadius.circular(cardRadius),
           color: isSelected
               ? theme.colorScheme.primary.withAlpha(25)
               : Colors.transparent,
+          border: isSelected && tokens?.borderColor != null
+              ? Border.all(
+                  color: tokens!.borderColor!.withAlpha(120),
+                  width: tokens.borderWidth > 0 ? tokens.borderWidth : 1,
+                )
+              : null,
         ),
         child: Row(
           children: [
@@ -56,7 +66,7 @@ class SongTile extends StatelessWidget {
               imageUri: artworkUri,
               albumId: albumId,
               size: 52,
-              borderRadius: AppConstants.artworkBorderRadius,
+              borderRadius: artRadius,
             ),
             const SizedBox(width: 12),
             Expanded(

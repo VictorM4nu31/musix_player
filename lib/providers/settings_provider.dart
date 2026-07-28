@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../app/theme/theme_catalog.dart';
+import '../app/theme/theme_definition.dart';
 import '../core/service_locator.dart';
 import '../core/utils/seeded_stream.dart';
 import '../core/widgets/player_animations/animation_type.dart';
@@ -19,9 +21,17 @@ final currentThemeModeProvider = Provider<ThemeMode>((ref) {
       settingsService.themeMode;
 });
 
-final themePreferenceProvider = StreamProvider<ThemePreference>((ref) {
+final themePreferenceProvider = StreamProvider<ThemeId>((ref) {
   final service = ref.watch(settingsServiceProvider);
   return seededStream(service.themePreference, service.themeStream);
+});
+
+final themeIdProvider = themePreferenceProvider;
+
+final materialThemeConfigProvider = Provider<MaterialThemeConfig>((ref) {
+  final id = ref.watch(themePreferenceProvider).valueOrNull ??
+      settingsService.themePreference;
+  return ThemeCatalog.materialConfig(id);
 });
 
 final sortPreferenceProvider = StreamProvider<SortPreference>((ref) {

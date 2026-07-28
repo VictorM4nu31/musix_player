@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'router.dart';
-import 'theme/app_theme.dart';
-import 'theme/pixel_art_theme.dart';
+import 'theme/theme_catalog.dart';
+import 'theme/theme_definition.dart';
 import '../core/constants/app_constants.dart';
 import '../core/service_locator.dart';
 import '../services/audio/audio_player_service.dart';
@@ -108,14 +108,18 @@ class _MusixPlayerAppState extends State<MusixPlayerApp> {
         historyService.addEntry(song);
       });
 
+      // notificationColor is applied at service init (Android MediaStyle accent).
+      // Layout/typography of the system notification cannot be themed from Flutter.
       audioHandler = await AudioService.init(
         builder: () => MusixAudioHandler(audioService),
-        config: const AudioServiceConfig(
+        config: AudioServiceConfig(
           androidNotificationChannelId: 'com.musix_player.channel.audio',
           androidNotificationChannelName: 'Musix Player',
           androidNotificationOngoing: true,
           androidStopForegroundOnPause: true,
           androidNotificationIcon: 'mipmap/ic_launcher',
+          notificationColor:
+              ThemeCatalog.notificationAccent(settingsService.themePreference),
         ),
       );
 
@@ -161,16 +165,16 @@ class _AppWithTheme extends ConsumerStatefulWidget {
 }
 
 class _AppWithThemeState extends ConsumerState<_AppWithTheme> {
-  late ThemeMode _themeMode;
-  StreamSubscription<ThemeMode>? _themeSub;
+  late MaterialThemeConfig _themeConfig;
+  StreamSubscription<ThemeId>? _themeSub;
 
   @override
   void initState() {
     super.initState();
-    _themeMode = settingsService.themeMode;
-    _themeSub = settingsService.themeModeStream.listen((mode) {
+    _themeConfig = settingsService.materialThemeConfig;
+    _themeSub = settingsService.themeStream.listen((_) {
       if (mounted) {
-        setState(() => _themeMode = mode);
+        setState(() => _themeConfig = settingsService.materialThemeConfig);
       }
     });
   }
@@ -181,21 +185,14 @@ class _AppWithThemeState extends ConsumerState<_AppWithTheme> {
     super.dispose();
   }
 
-  ThemeData _darkTheme() {
-    if (settingsService.themePreference == ThemePreference.pixelArt) {
-      return AppThemePixelArt.theme;
-    }
-    return AppTheme.dark;
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Musix Player',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      darkTheme: _darkTheme(),
-      themeMode: _themeMode,
+      theme: _themeConfig.theme,
+      darkTheme: _themeConfig.darkTheme,
+      themeMode: _themeConfig.themeMode,
       routerConfig: router,
     );
   }

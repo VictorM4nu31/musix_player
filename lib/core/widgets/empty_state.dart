@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/theme_tokens.dart';
 import '../constants/app_constants.dart';
-import '../../app/theme/pixel_art_theme.dart';
 
 class EmptyState extends StatefulWidget {
   const EmptyState({
@@ -62,8 +62,8 @@ class _EmptyStateState extends State<EmptyState>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isPixelArt = theme.brightness == Brightness.dark &&
-        theme.scaffoldBackgroundColor == PixelArtColors.background;
+    final tokens = context.musixThemeOrNull;
+    final isPixelArt = tokens?.isPixelArt ?? false;
 
     return Center(
       child: FadeTransition(
@@ -76,14 +76,14 @@ class _EmptyStateState extends State<EmptyState>
               mainAxisSize: MainAxisSize.min,
               children: [
                 isPixelArt
-                    ? _buildPixelIcon(theme)
+                    ? _buildPixelIcon(theme, tokens!)
                     : _buildStandardIcon(theme),
                 const SizedBox(height: 24),
                 Text(
                   widget.title,
                   style: (isPixelArt
                           ? theme.textTheme.titleLarge?.copyWith(
-                              color: PixelArtColors.primary,
+                              color: theme.colorScheme.primary,
                             )
                           : theme.textTheme.titleLarge)
                       ?.copyWith(fontWeight: FontWeight.w600),
@@ -94,9 +94,7 @@ class _EmptyStateState extends State<EmptyState>
                   Text(
                     widget.subtitle!,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isPixelArt
-                          ? PixelArtColors.textSecondary
-                          : theme.textTheme.bodySmall?.color,
+                      color: theme.textTheme.bodySmall?.color,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -104,7 +102,7 @@ class _EmptyStateState extends State<EmptyState>
                 if (widget.actionLabel != null && widget.onAction != null) ...[
                   const SizedBox(height: 24),
                   isPixelArt
-                      ? _buildPixelActionButton()
+                      ? _buildPixelActionButton(theme, tokens!)
                       : FilledButton.tonalIcon(
                           onPressed: widget.onAction,
                           icon: const Icon(Icons.refresh_rounded),
@@ -135,46 +133,45 @@ class _EmptyStateState extends State<EmptyState>
     );
   }
 
-  Widget _buildPixelIcon(ThemeData theme) {
+  Widget _buildPixelIcon(ThemeData theme, MusixThemeTokens tokens) {
+    final border = tokens.borderColor ?? theme.colorScheme.primary;
     return Container(
       width: 120,
       height: 120,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
         border: Border.all(
-          color: PixelArtColors.border.withAlpha(80),
-          width: 2,
+          color: border.withAlpha(80),
+          width: tokens.borderWidth > 0 ? tokens.borderWidth : 2,
         ),
-        color: PixelArtColors.card,
+        color: theme.colorScheme.surface,
       ),
       child: Icon(
         widget.icon,
         size: 56,
-        color: PixelArtColors.primary.withAlpha(150),
+        color: theme.colorScheme.primary.withAlpha(150),
       ),
     );
   }
 
-  Widget _buildPixelActionButton() {
+  Widget _buildPixelActionButton(ThemeData theme, MusixThemeTokens tokens) {
     return GestureDetector(
       onTap: widget.onAction,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
-          color: PixelArtColors.primary,
-          borderRadius: BorderRadius.circular(4),
+          color: theme.colorScheme.primary,
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
           border: Border.all(
-            color: PixelArtColors.primary.withAlpha(150),
+            color: theme.colorScheme.primary.withAlpha(150),
             width: 2,
           ),
         ),
         child: Text(
           widget.actionLabel!,
-          style: const TextStyle(
-            color: PixelArtColors.background,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.onPrimary,
             fontWeight: FontWeight.w600,
-            fontSize: 14,
-            fontFamily: 'monospace',
           ),
         ),
       ),

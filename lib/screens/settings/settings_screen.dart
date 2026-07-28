@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../app/theme/theme_catalog.dart';
+import '../../app/theme/theme_tokens.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/widgets/bottom_sheet_drag_handle.dart';
 import '../../core/widgets/player_animations/animation_type.dart';
@@ -105,18 +107,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  String _getThemeName(ThemePreference pref) {
-    switch (pref) {
-      case ThemePreference.light:
-        return 'Claro';
-      case ThemePreference.dark:
-        return 'Oscuro';
-      case ThemePreference.system:
-        return 'Sistema';
-      case ThemePreference.pixelArt:
-        return 'Pixel Art';
-    }
-  }
+  String _getThemeName(ThemeId pref) => pref.displayName;
 
   String _getSortName(SortPreference sort) {
     switch (sort) {
@@ -183,104 +174,69 @@ class SettingsScreen extends ConsumerWidget {
   void _showThemeDialog(
     BuildContext context,
     WidgetRef ref,
-    ThemePreference currentPref,
+    ThemeId currentPref,
   ) {
     final settings = ref.read(settingsServiceProvider);
+    final ids = ThemeCatalog.selectableIds;
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) {
         final theme = Theme.of(context);
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Center(child: BottomSheetDragHandle()),
-                const SizedBox(height: 20),
-                Text('Seleccionar tema', style: theme.textTheme.titleLarge),
-                const SizedBox(height: 20),
-                Row(
+        final tokens = theme.extension<MusixThemeTokens>();
+        final sheetRadius = tokens?.radiusLg ?? 20;
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.72,
+          minChildSize: 0.45,
+          maxChildSize: 0.92,
+          builder: (context, scrollController) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: _ThemePreviewCard(
-                        icon: Icons.brightness_auto_rounded,
-                        label: 'Sistema',
-                        isSelected: currentPref == ThemePreference.system,
-                        colors: const [
-                          Color(0xFF5C6BC0),
-                          Color(0xFFFFFFFF),
-                          Color(0xFF1A1B4B),
-                        ],
-                        onTap: () {
-                          settings.setThemePreference(ThemePreference.system);
-                          Navigator.pop(context);
-                        },
-                      ),
+                    const Center(child: BottomSheetDragHandle()),
+                    const SizedBox(height: 16),
+                    Text('Experiencia visual', style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Cada tema cambia colores, tipografía y estilo de controles.',
+                      style: theme.textTheme.bodySmall,
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(height: 16),
                     Expanded(
-                      child: _ThemePreviewCard(
-                        icon: Icons.light_mode_rounded,
-                        label: 'Claro',
-                        isSelected: currentPref == ThemePreference.light,
-                        colors: const [
-                          Color(0xFF5C6BC0),
-                          Color(0xFFF5F6FA),
-                          Color(0xFF1A1B4B),
-                        ],
-                        onTap: () {
-                          settings.setThemePreference(ThemePreference.light);
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _ThemePreviewCard(
-                        icon: Icons.dark_mode_rounded,
-                        label: 'Oscuro',
-                        isSelected: currentPref == ThemePreference.dark,
-                        colors: const [
-                          Color(0xFF9FA8DA),
-                          Color(0xFF161726),
-                          Color(0xFFE8E9F3),
-                        ],
-                        onTap: () {
-                          settings.setThemePreference(ThemePreference.dark);
-                          Navigator.pop(context);
+                      child: GridView.builder(
+                        controller: scrollController,
+                        itemCount: ids.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.92,
+                        ),
+                        itemBuilder: (context, index) {
+                          final id = ids[index];
+                          return _ThemeExperienceCard(
+                            id: id,
+                            isSelected: currentPref == id,
+                            borderRadius: sheetRadius,
+                            onTap: () {
+                              settings.setThemePreference(id);
+                              Navigator.pop(context);
+                            },
+                          );
                         },
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ThemePreviewCard(
-                        icon: Icons.videogame_asset_rounded,
-                        label: 'Pixel Art',
-                        isSelected: currentPref == ThemePreference.pixelArt,
-                        colors: const [
-                          Color(0xFF00FF41),
-                          Color(0xFF0D1117),
-                          Color(0xFFE6EDF3),
-                        ],
-                        onTap: () {
-                          settings.setThemePreference(ThemePreference.pixelArt);
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ),
-                    const Expanded(child: SizedBox()),
-                  ],
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -400,100 +356,176 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final radius = context.musixThemeOrNull?.radiusMd ?? 16;
     return ListTile(
       leading: Icon(icon, color: theme.colorScheme.primary),
       title: Text(title),
       subtitle: Text(subtitle),
       onTap: onTap,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(radius),
       ),
     );
   }
 }
 
-class _ThemePreviewCard extends StatelessWidget {
-  const _ThemePreviewCard({
-    required this.icon,
-    required this.label,
+class _ThemeExperienceCard extends StatelessWidget {
+  const _ThemeExperienceCard({
+    required this.id,
     required this.isSelected,
-    required this.colors,
     required this.onTap,
+    this.borderRadius = 16,
   });
 
-  final IconData icon;
-  final String label;
+  final ThemeId id;
   final bool isSelected;
-  final List<Color> colors;
   final VoidCallback onTap;
+  final double borderRadius;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final hostTheme = Theme.of(context);
+    final colors = ThemeCatalog.previewColors(id);
+    final primary = colors[0];
+    final background = colors.length > 1 ? colors[1] : hostTheme.scaffoldBackgroundColor;
+    final onBg = colors.length > 2 ? colors[2] : hostTheme.colorScheme.onSurface;
+    final radius = id == ThemeId.pixelArt
+        ? 2.0
+        : id == ThemeId.cyberpunk
+            ? 8.0
+            : id == ThemeId.minimal
+                ? 8.0
+                : 14.0;
+    final titleFamily = switch (id) {
+      ThemeId.pixelArt => 'PressStart2P',
+      ThemeId.cyberpunk => 'Orbitron',
+      _ => null,
+    };
+    final bodyFamily = switch (id) {
+      ThemeId.pixelArt || ThemeId.cyberpunk => 'ShareTechMono',
+      _ => null,
+    };
 
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? theme.colorScheme.primary : theme.dividerColor,
-            width: isSelected ? 2.5 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: theme.colorScheme.primary.withAlpha(40),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 28,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            color: hostTheme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(borderRadius),
+            border: Border.all(
               color: isSelected
-                  ? theme.colorScheme.primary
-                  : theme.iconTheme.color,
+                  ? hostTheme.colorScheme.primary
+                  : hostTheme.dividerColor,
+              width: isSelected ? 2.5 : 1,
             ),
-            const SizedBox(height: 8),
-            Container(
-              height: 36,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                gradient: LinearGradient(
-                  colors: colors,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: hostTheme.colorScheme.primary.withAlpha(40),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Container(
+                  color: background,
+                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(ThemeCatalog.iconOf(id), size: 16, color: primary),
+                          const Spacer(),
+                          if (isSelected)
+                            Icon(Icons.check_circle_rounded,
+                                size: 16, color: primary),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        id.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: primary,
+                          fontSize: titleFamily == 'PressStart2P' ? 8 : 13,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: titleFamily,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Aa Bb 123',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: onBg.withAlpha(200),
+                          fontSize: 11,
+                          fontFamily: bodyFamily,
+                        ),
+                      ),
+                      const Spacer(),
+                      // Mini-player mock
+                      Container(
+                        height: 34,
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        decoration: BoxDecoration(
+                          color: primary.withAlpha(28),
+                          borderRadius: BorderRadius.circular(radius),
+                          border: id == ThemeId.pixelArt || id == ThemeId.cyberpunk
+                              ? Border.all(color: primary.withAlpha(160), width: 1.2)
+                              : null,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: primary.withAlpha(90),
+                                borderRadius: BorderRadius.circular(
+                                  id == ThemeId.pixelArt ? 2 : 6,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Container(
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: onBg.withAlpha(90),
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Icon(Icons.play_arrow_rounded, size: 18, color: primary),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected ? theme.colorScheme.primary : null,
+              Container(
+                height: 6,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: colors),
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            if (isSelected)
-              Icon(
-                Icons.check_circle_rounded,
-                size: 18,
-                color: theme.colorScheme.primary,
-              )
-            else
-              const SizedBox(height: 18),
-          ],
+            ],
+          ),
         ),
       ),
     );

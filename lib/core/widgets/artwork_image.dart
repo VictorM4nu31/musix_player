@@ -1,7 +1,7 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../app/theme/pixel_art_theme.dart';
+import '../../app/theme/theme_tokens.dart';
 
 class ArtworkImage extends StatefulWidget {
   const ArtworkImage({
@@ -103,8 +103,9 @@ class _ArtworkImageState extends State<ArtworkImage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isPixelArt = theme.brightness == Brightness.dark &&
-        theme.scaffoldBackgroundColor == PixelArtColors.background;
+    final tokens = context.musixThemeOrNull;
+    final isPixelArt = tokens?.isPixelArt ?? false;
+    final radius = tokens?.artworkRadius ?? widget.borderRadius;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -114,10 +115,16 @@ class _ArtworkImageState extends State<ArtworkImage> {
           width: effectiveSize > 0 ? effectiveSize : widget.size,
           height: effectiveSize > 0 ? effectiveSize : widget.size,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
+            borderRadius: BorderRadius.circular(radius),
             color: isPixelArt
-                ? PixelArtColors.card
+                ? theme.colorScheme.surface
                 : theme.colorScheme.primary.withAlpha(30),
+            border: isPixelArt && tokens?.borderColor != null
+                ? Border.all(
+                    color: tokens!.borderColor!,
+                    width: tokens.borderWidth,
+                  )
+                : null,
           ),
           clipBehavior: Clip.antiAlias,
           child: _buildContent(theme, isPixelArt, effectiveSize > 0 ? effectiveSize : widget.size),
@@ -134,9 +141,7 @@ class _ArtworkImageState extends State<ArtworkImage> {
           height: effectiveSize * 0.3,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: isPixelArt
-                ? PixelArtColors.primary
-                : theme.colorScheme.primary,
+            color: theme.colorScheme.primary,
           ),
         ),
       );
@@ -187,11 +192,11 @@ class _ArtworkImageState extends State<ArtworkImage> {
   Widget _buildPlaceholder(ThemeData theme, bool isPixelArt, double effectiveSize) {
     if (isPixelArt) {
       return Container(
-        color: PixelArtColors.card,
+        color: theme.colorScheme.surface,
         child: CustomPaint(
           size: Size(effectiveSize, effectiveSize),
           painter: _PixelArtNotePainter(
-            color: PixelArtColors.primary.withAlpha(120),
+            color: theme.colorScheme.primary.withAlpha(120),
             size: effectiveSize,
           ),
         ),

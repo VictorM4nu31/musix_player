@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../core/utils/page_transitions.dart';
+import '../core/widgets/pixel_effects.dart';
 import '../screens/blacklist/blacklist_screen.dart';
 import '../screens/library/library_screen.dart';
 import '../screens/playlists/playlists_screen.dart';
@@ -147,41 +148,48 @@ class ScaffoldWithNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          Expanded(
-            child: navigationShell,
+    return Stack(
+      children: [
+        Scaffold(
+          body: Column(
+            children: [
+              Expanded(
+                child: navigationShell,
+              ),
+              const MiniPlayerWidget(),
+            ],
           ),
-          const MiniPlayerWidget(),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.library_music_rounded),
-            activeIcon: Icon(Icons.library_music_rounded),
-            label: 'Biblioteca',
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: _onItemTapped,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.library_music_rounded),
+                activeIcon: Icon(Icons.library_music_rounded),
+                label: 'Biblioteca',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.queue_music_rounded),
+                activeIcon: Icon(Icons.queue_music_rounded),
+                label: 'Playlists',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.favorite_border_rounded),
+                activeIcon: Icon(Icons.favorite_rounded),
+                label: 'Favoritos',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.settings_outlined),
+                activeIcon: Icon(Icons.settings_rounded),
+                label: 'Configuración',
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.queue_music_rounded),
-            activeIcon: Icon(Icons.queue_music_rounded),
-            label: 'Playlists',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border_rounded),
-            activeIcon: Icon(Icons.favorite_rounded),
-            label: 'Favoritos',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings_rounded),
-            label: 'Configuración',
-          ),
-        ],
-      ),
+        ),
+        const Positioned.fill(
+          child: IgnorePointer(child: ScanlineOverlay()),
+        ),
+      ],
     );
   }
 }

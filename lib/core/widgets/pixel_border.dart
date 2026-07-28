@@ -1,35 +1,38 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../app/theme/pixel_art_theme.dart';
+import '../../app/theme/theme_tokens.dart';
 
 class PixelBorder extends StatelessWidget {
   const PixelBorder({
     super.key,
     required this.child,
     this.color,
-    this.width = 1.5,
+    this.width,
     this.padding = const EdgeInsets.all(2),
-    this.borderRadius = 4,
+    this.borderRadius,
   });
 
   final Widget child;
   final Color? color;
-  final double width;
+  final double? width;
   final EdgeInsetsGeometry padding;
-  final double borderRadius;
+  final double? borderRadius;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isPixelArt = theme.brightness == Brightness.dark &&
-        theme.scaffoldBackgroundColor == PixelArtColors.background;
-    final borderColor = color ?? (isPixelArt ? PixelArtColors.border : theme.colorScheme.primary);
+    final tokens = context.musixThemeOrNull;
+    final borderColor = color ??
+        tokens?.borderColor ??
+        theme.colorScheme.primary;
+    final effectiveWidth = width ?? tokens?.borderWidth ?? 1.5;
+    final radius = borderRadius ?? tokens?.radiusMd ?? 4;
 
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(color: borderColor, width: width),
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: borderColor, width: effectiveWidth),
       ),
       child: child,
     );
