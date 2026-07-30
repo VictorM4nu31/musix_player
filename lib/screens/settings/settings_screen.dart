@@ -11,6 +11,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/songs_provider.dart';
 import '../../services/settings/settings_service.dart';
 import '../../visual/models/animation_preset.dart';
+import '../../visual/models/progress_style.dart';
 import '../../visual/models/visual_quality.dart';
 import '../../visual/models/visualizer_type.dart';
 
@@ -68,6 +69,13 @@ class SettingsScreen extends ConsumerWidget {
                 title: 'Calidad visual',
                 subtitle: visual.quality.displayName,
                 onTap: () => _showQualityDialog(context, ref, visual.quality),
+              ),
+              _SettingsTile(
+                icon: Icons.graphic_eq_outlined,
+                title: 'Barra de progreso',
+                subtitle: visual.progressStyle.displayName,
+                onTap: () =>
+                    _showProgressStyleDialog(context, ref, visual.progressStyle),
               ),
               SwitchListTile(
                 secondary: Icon(
@@ -250,6 +258,31 @@ class SettingsScreen extends ConsumerWidget {
             isSelected: current == quality,
             onTap: () {
               settings.setVisualQuality(quality);
+              Navigator.pop(context);
+            },
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  void _showProgressStyleDialog(
+    BuildContext context,
+    WidgetRef ref,
+    ProgressStyle current,
+  ) {
+    final settings = ref.read(settingsServiceProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Barra de progreso'),
+        children: ProgressStyle.values.map((style) {
+          return _SortOption(
+            title: style.displayName,
+            isSelected: current == style,
+            onTap: () {
+              settings.setProgressStyle(style);
               Navigator.pop(context);
             },
           );

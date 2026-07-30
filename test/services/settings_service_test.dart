@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:musix_player/services/settings/settings_service.dart';
+import 'package:musix_player/visual/analysis/waveform_service.dart';
 import 'package:musix_player/visual/models/animation_preset.dart';
+import 'package:musix_player/visual/models/progress_style.dart';
 import 'package:musix_player/visual/models/visual_quality.dart';
 import 'package:musix_player/visual/models/visualizer_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -123,16 +125,32 @@ void main() {
     await first.setVisualIntensity(0.4);
     await first.setAudioReactive(false);
     await first.setAnimationsEnabled(false);
+    await first.setProgressStyle(ProgressStyle.waveform);
     await first.dispose();
 
     final second = SettingsService();
     await second.init();
     expect(second.animationPreset, AnimationPreset.dynamic);
-    expect(second.visualizerType, VisualizerType.pulse);
+    expect(second.visualizerType, VisualizerType.spectrum);
     expect(second.visualQuality, VisualQuality.high);
     expect(second.visualIntensity, closeTo(0.4, 0.001));
     expect(second.audioReactive, isFalse);
     expect(second.animationsEnabled, isFalse);
+    expect(second.progressStyle, ProgressStyle.waveform);
     await second.dispose();
+  });
+
+  test('synthetic waveform samples are stable for same song', () {
+    final a = WaveformData.synthetic(
+      songId: 42,
+      duration: const Duration(minutes: 3),
+    );
+    final b = WaveformData.synthetic(
+      songId: 42,
+      duration: const Duration(minutes: 3),
+    );
+    expect(a.samples, b.samples);
+    expect(a.isSynthetic, isTrue);
+    expect(a.samples, isNotEmpty);
   });
 }

@@ -4,7 +4,8 @@ enum VisualizerType {
   pulse,
   vinyl,
   waves,
-  equalizer;
+  equalizer,
+  spectrum;
 
   String get storageId => name;
 
@@ -15,6 +16,7 @@ enum VisualizerType {
         VisualizerType.vinyl => 'Vinilo',
         VisualizerType.waves => 'Ondas',
         VisualizerType.equalizer => 'Ecualizador',
+        VisualizerType.spectrum => 'Espectro',
       };
 
   static VisualizerType? tryParse(String? value) {
@@ -46,5 +48,6 @@ enum VisualizerType {
         VisualizerType.vinyl => 3,
         VisualizerType.minimal => 4,
         VisualizerType.none => 5,
+        VisualizerType.spectrum => 2, // closest legacy: pulse
       };
 }

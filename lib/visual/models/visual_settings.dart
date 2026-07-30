@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'animation_preset.dart';
+import 'progress_style.dart';
 import 'visual_quality.dart';
 import 'visualizer_type.dart';
 
@@ -12,6 +13,7 @@ class VisualSettings {
     this.intensity = 0.7,
     this.audioReactive = true,
     this.animationsEnabled = true,
+    this.progressStyle = ProgressStyle.auto,
   });
 
   final VisualizerType visualizerType;
@@ -20,6 +22,7 @@ class VisualSettings {
   final double intensity;
   final bool audioReactive;
   final bool animationsEnabled;
+  final ProgressStyle progressStyle;
 
   /// Effective type after accessibility / kill-switch.
   VisualizerType get effectiveType {
@@ -36,6 +39,7 @@ class VisualSettings {
     double? intensity,
     bool? audioReactive,
     bool? animationsEnabled,
+    ProgressStyle? progressStyle,
   }) {
     return VisualSettings(
       visualizerType: visualizerType ?? this.visualizerType,
@@ -44,6 +48,7 @@ class VisualSettings {
       intensity: intensity ?? this.intensity,
       audioReactive: audioReactive ?? this.audioReactive,
       animationsEnabled: animationsEnabled ?? this.animationsEnabled,
+      progressStyle: progressStyle ?? this.progressStyle,
     );
   }
 
@@ -55,7 +60,8 @@ class VisualSettings {
         other.quality == quality &&
         other.intensity == intensity &&
         other.audioReactive == audioReactive &&
-        other.animationsEnabled == animationsEnabled;
+        other.animationsEnabled == animationsEnabled &&
+        other.progressStyle == progressStyle;
   }
 
   @override
@@ -66,5 +72,6 @@ class VisualSettings {
         intensity,
         audioReactive,
         animationsEnabled,
+        progressStyle,
       );
 }

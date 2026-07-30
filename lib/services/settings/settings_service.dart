@@ -5,6 +5,7 @@ import '../../app/theme/theme_catalog.dart';
 import '../../app/theme/theme_definition.dart';
 import '../../app/theme/theme_id.dart';
 import '../../visual/models/animation_preset.dart';
+import '../../visual/models/progress_style.dart';
 import '../../visual/models/visual_quality.dart';
 import '../../visual/models/visualizer_type.dart';
 
@@ -23,6 +24,7 @@ class SettingsService {
   static const _visualIntensityKey = 'visual_intensity';
   static const _audioReactiveKey = 'audio_reactive';
   static const _animationsEnabledKey = 'animations_enabled';
+  static const _progressStyleKey = 'progress_style';
   static const _shuffleKey = 'playback_shuffle';
   static const _loopKey = 'playback_loop';
 
@@ -37,6 +39,7 @@ class SettingsService {
   final _visualIntensityController = StreamController<double>.broadcast();
   final _audioReactiveController = StreamController<bool>.broadcast();
   final _animationsEnabledController = StreamController<bool>.broadcast();
+  final _progressStyleController = StreamController<ProgressStyle>.broadcast();
 
   ThemeId _themePreference = ThemeId.system;
   SortPreference _sortPreference = SortPreference.title;
@@ -46,6 +49,7 @@ class SettingsService {
   double _visualIntensity = 0.7;
   bool _audioReactive = true;
   bool _animationsEnabled = true;
+  ProgressStyle _progressStyle = ProgressStyle.auto;
   bool _shuffleEnabled = false;
 
   /// Matches [LoopMode] index: 0=off, 1=one, 2=all.
@@ -64,6 +68,8 @@ class SettingsService {
   Stream<bool> get audioReactiveStream => _audioReactiveController.stream;
   Stream<bool> get animationsEnabledStream =>
       _animationsEnabledController.stream;
+  Stream<ProgressStyle> get progressStyleStream =>
+      _progressStyleController.stream;
 
   /// Backward-compatible alias used by older call sites.
   Stream<VisualizerType> get animationStream => visualizerTypeStream;
@@ -77,6 +83,7 @@ class SettingsService {
   double get visualIntensity => _visualIntensity;
   bool get audioReactive => _audioReactive;
   bool get animationsEnabled => _animationsEnabled;
+  ProgressStyle get progressStyle => _progressStyle;
 
   /// Legacy name — same as [visualizerType].
   VisualizerType get playerAnimation => _visualizerType;
@@ -114,6 +121,9 @@ class SettingsService {
         (prefs.getDouble(_visualIntensityKey) ?? 0.7).clamp(0.0, 1.0);
     _audioReactive = prefs.getBool(_audioReactiveKey) ?? true;
     _animationsEnabled = prefs.getBool(_animationsEnabledKey) ?? true;
+    _progressStyle =
+        ProgressStyle.tryParse(prefs.getString(_progressStyleKey)) ??
+            ProgressStyle.auto;
 
     _shuffleEnabled = prefs.getBool(_shuffleKey) ?? false;
     final loopIndex = prefs.getInt(_loopKey) ?? 0;
@@ -128,6 +138,7 @@ class SettingsService {
     _visualIntensityController.add(_visualIntensity);
     _audioReactiveController.add(_audioReactive);
     _animationsEnabledController.add(_animationsEnabled);
+    _progressStyleController.add(_progressStyle);
   }
 
   VisualizerType _loadVisualizerType(SharedPreferences prefs) {
@@ -236,6 +247,13 @@ class SettingsService {
     _animationsEnabledController.add(_animationsEnabled);
   }
 
+  Future<void> setProgressStyle(ProgressStyle style) async {
+    _progressStyle = style;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_progressStyleKey, style.storageId);
+    _progressStyleController.add(_progressStyle);
+  }
+
   Future<void> setShuffleEnabled(bool enabled) async {
     _shuffleEnabled = enabled;
     final prefs = await SharedPreferences.getInstance();
@@ -259,5 +277,6 @@ class SettingsService {
     await _visualIntensityController.close();
     await _audioReactiveController.close();
     await _animationsEnabledController.close();
+    await _progressStyleController.close();
   }
 }

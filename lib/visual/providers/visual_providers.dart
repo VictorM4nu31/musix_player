@@ -3,6 +3,7 @@ import '../../core/service_locator.dart';
 import '../../core/utils/seeded_stream.dart';
 import '../../services/settings/settings_service.dart';
 import '../models/animation_preset.dart';
+import '../models/progress_style.dart';
 import '../models/visual_quality.dart';
 import '../models/visual_settings.dart';
 import '../models/visualizer_type.dart';
@@ -44,6 +45,11 @@ final animationsEnabledProvider = StreamProvider<bool>((ref) {
   );
 });
 
+final progressStyleProvider = StreamProvider<ProgressStyle>((ref) {
+  final service = ref.watch(visualSettingsServiceProvider);
+  return seededStream(service.progressStyle, service.progressStyleStream);
+});
+
 /// Aggregated snapshot for renderers (rebuilds when any visual setting changes).
 final visualSettingsProvider = Provider<VisualSettings>((ref) {
   final type = ref.watch(visualizerTypeProvider).valueOrNull;
@@ -52,6 +58,7 @@ final visualSettingsProvider = Provider<VisualSettings>((ref) {
   final intensity = ref.watch(visualIntensityProvider).valueOrNull;
   final reactive = ref.watch(audioReactiveProvider).valueOrNull;
   final enabled = ref.watch(animationsEnabledProvider).valueOrNull;
+  final progress = ref.watch(progressStyleProvider).valueOrNull;
   final service = ref.watch(visualSettingsServiceProvider);
 
   return VisualSettings(
@@ -61,5 +68,6 @@ final visualSettingsProvider = Provider<VisualSettings>((ref) {
     intensity: intensity ?? service.visualIntensity,
     audioReactive: reactive ?? service.audioReactive,
     animationsEnabled: enabled ?? service.animationsEnabled,
+    progressStyle: progress ?? service.progressStyle,
   );
 });

@@ -34,6 +34,8 @@ dependencies:
 
   # Paths for widget artwork cache
   path_provider: ^2.1.5
+  just_waveform: ^0.0.7
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:

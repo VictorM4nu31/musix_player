@@ -3,15 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../app/theme/theme_tokens.dart';
-import '../../core/utils/formatters.dart';
 import '../../core/widgets/animated_favorite_button.dart';
 import '../../core/widgets/pixel_effects.dart';
-import '../../core/widgets/themed_slider_thumb.dart';
 import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../services/audio/audio_player_service.dart';
 import '../../visual/widgets/player_visual_shell.dart';
+import '../../visual/widgets/visual_progress_bar.dart';
 
 enum _PlayerLayout { compact, normal, wide }
 
@@ -136,7 +135,8 @@ class _PlayerContent extends ConsumerWidget {
 
                 final info = _PlayerSongInfo(song: song, textScale: textScale);
 
-                final progress = _PlayerProgress(
+                final progress = VisualProgressBar(
+                  song: song,
                   position: position,
                   totalDuration: totalDuration,
                   onSeek: (d) => audioService.seek(d),
@@ -335,61 +335,6 @@ class _PlayerSongInfo extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-}
-
-class _PlayerProgress extends StatelessWidget {
-  const _PlayerProgress({
-    required this.position,
-    required this.totalDuration,
-    required this.onSeek,
-  });
-
-  final Duration position;
-  final Duration totalDuration;
-  final ValueChanged<Duration> onSeek;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final tokens = context.musixThemeOrNull;
-    final maxMs = totalDuration.inMilliseconds <= 0
-        ? 1.0
-        : totalDuration.inMilliseconds.toDouble();
-    final raw = position.inMilliseconds.toDouble();
-    final value = raw < 0 ? 0.0 : (raw > maxMs ? maxMs : raw);
-    final sliderTheme = tokens != null
-        ? sliderThemeFromTokens(theme, tokens)
-        : theme.sliderTheme;
-
-    return Column(
-      children: [
-        SliderTheme(
-          data: sliderTheme,
-          child: Slider(
-            value: value,
-            max: maxMs,
-            onChanged: (v) => onSeek(Duration(milliseconds: v.toInt())),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                Formatters.formatDurationShort(position),
-                style: theme.textTheme.bodySmall,
-              ),
-              Text(
-                Formatters.formatDurationShort(totalDuration),
-                style: theme.textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

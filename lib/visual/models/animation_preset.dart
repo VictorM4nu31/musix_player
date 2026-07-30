@@ -31,10 +31,10 @@ enum AnimationPreset {
   VisualizerType get defaultVisualizer => switch (this) {
         AnimationPreset.performance => VisualizerType.none,
         AnimationPreset.minimal => VisualizerType.minimal,
-        AnimationPreset.dynamic => VisualizerType.pulse,
+        AnimationPreset.dynamic => VisualizerType.spectrum,
         AnimationPreset.vinyl => VisualizerType.vinyl,
         AnimationPreset.retro => VisualizerType.equalizer,
-        AnimationPreset.cyber => VisualizerType.waves,
+        AnimationPreset.cyber => VisualizerType.spectrum,
       };
 
   VisualQuality get defaultQuality => switch (this) {
