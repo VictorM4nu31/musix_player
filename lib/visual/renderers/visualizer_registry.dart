@@ -5,6 +5,7 @@ import 'none_renderer.dart';
 import 'pulse_renderer.dart';
 import 'spectrum_renderer.dart';
 import 'vinyl_renderer.dart';
+import '../particles/particle_renderer.dart';
 import 'visualizer_renderer.dart';
 import 'waves_renderer.dart';
 
@@ -19,6 +20,7 @@ class VisualizerRegistry {
     VisualizerType.waves: const WavesRenderer(),
     VisualizerType.equalizer: const EqualizerRenderer(),
     VisualizerType.spectrum: const SpectrumRenderer(),
+    VisualizerType.particle: const ParticleRenderer(),
   };
 
   static VisualizerRenderer resolve(VisualizerType type) {

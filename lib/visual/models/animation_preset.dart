@@ -34,7 +34,7 @@ enum AnimationPreset {
         AnimationPreset.dynamic => VisualizerType.spectrum,
         AnimationPreset.vinyl => VisualizerType.vinyl,
         AnimationPreset.retro => VisualizerType.equalizer,
-        AnimationPreset.cyber => VisualizerType.spectrum,
+        AnimationPreset.cyber => VisualizerType.particle,
       };
 
   VisualQuality get defaultQuality => switch (this) {
@@ -43,7 +43,7 @@ enum AnimationPreset {
         AnimationPreset.dynamic => VisualQuality.medium,
         AnimationPreset.vinyl => VisualQuality.low,
         AnimationPreset.retro => VisualQuality.medium,
-        AnimationPreset.cyber => VisualQuality.high,
+        AnimationPreset.cyber => VisualQuality.ultra,
       };
 
   double get defaultIntensity => switch (this) {

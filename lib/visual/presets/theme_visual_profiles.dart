@@ -25,7 +25,7 @@ class ThemeVisualProfile {
         ),
       ThemeId.cyberpunk => const ThemeVisualProfile(
           suggestedPreset: AnimationPreset.cyber,
-          suggestedVisualizer: VisualizerType.waves,
+          suggestedVisualizer: VisualizerType.particle,
         ),
       ThemeId.amoled => const ThemeVisualProfile(
           suggestedPreset: AnimationPreset.minimal,
