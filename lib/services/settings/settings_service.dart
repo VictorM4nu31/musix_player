@@ -27,6 +27,9 @@ class SettingsService {
   static const _progressStyleKey = 'progress_style';
   static const _shuffleKey = 'playback_shuffle';
   static const _loopKey = 'playback_loop';
+  static const _lastSongIdKey = 'last_song_id';
+  static const _lastPositionKey = 'last_position';
+  static const _lastQueueIdsKey = 'last_queue_ids';
 
   final _controller = StreamController<ThemeId>.broadcast();
   final _themeModeController = StreamController<ThemeMode>.broadcast();
@@ -54,6 +57,10 @@ class SettingsService {
 
   /// Matches [LoopMode] index: 0=off, 1=one, 2=all.
   int _loopModeIndex = 0;
+
+  int? _lastSongId;
+  int _lastPositionMs = 0;
+  List<int> _lastQueueIds = [];
 
   Stream<ThemeId> get themeStream => _controller.stream;
   Stream<ThemeMode> get themeModeStream => _themeModeController.stream;
@@ -90,6 +97,10 @@ class SettingsService {
 
   bool get shuffleEnabled => _shuffleEnabled;
   int get loopModeIndex => _loopModeIndex;
+
+  int? get lastSongId => _lastSongId;
+  int get lastPositionMs => _lastPositionMs;
+  List<int> get lastQueueIds => List.unmodifiable(_lastQueueIds);
 
   ThemeMode get themeMode =>
       ThemeCatalog.materialConfig(_themePreference).themeMode;
@@ -128,6 +139,13 @@ class SettingsService {
     _shuffleEnabled = prefs.getBool(_shuffleKey) ?? false;
     final loopIndex = prefs.getInt(_loopKey) ?? 0;
     _loopModeIndex = (loopIndex >= 0 && loopIndex <= 2) ? loopIndex : 0;
+
+    _lastSongId = prefs.getInt(_lastSongIdKey);
+    _lastPositionMs = prefs.getInt(_lastPositionKey) ?? 0;
+    final queueStr = prefs.getString(_lastQueueIdsKey);
+    if (queueStr != null && queueStr.isNotEmpty) {
+      _lastQueueIds = queueStr.split(',').map(int.parse).toList();
+    }
 
     _controller.add(_themePreference);
     _themeModeController.add(themeMode);
@@ -265,6 +283,30 @@ class SettingsService {
     _loopModeIndex = (index >= 0 && index <= 2) ? index : 0;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_loopKey, _loopModeIndex);
+  }
+
+  Future<void> saveLastSession({
+    required int songId,
+    required int positionMs,
+    required List<int> queueIds,
+  }) async {
+    _lastSongId = songId;
+    _lastPositionMs = positionMs;
+    _lastQueueIds = List<int>.from(queueIds);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_lastSongIdKey, songId);
+    await prefs.setInt(_lastPositionKey, positionMs);
+    await prefs.setString(_lastQueueIdsKey, queueIds.join(','));
+  }
+
+  Future<void> clearLastSession() async {
+    _lastSongId = null;
+    _lastPositionMs = 0;
+    _lastQueueIds = [];
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_lastSongIdKey);
+    await prefs.remove(_lastPositionKey);
+    await prefs.remove(_lastQueueIdsKey);
   }
 
   Future<void> dispose() async {

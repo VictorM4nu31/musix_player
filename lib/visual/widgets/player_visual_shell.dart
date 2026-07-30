@@ -103,7 +103,12 @@ class _PlayerVisualShellState extends ConsumerState<PlayerVisualShell>
 
   void _pushBusSettings() {
     if (!mounted) return;
-    final settings = ref.read(visualSettingsProvider);
+    VisualSettings settings;
+    try {
+      settings = ref.read(visualSettingsProvider);
+    } catch (_) {
+      return;
+    }
     final allow = _lifecycle.allowHeavyVisuals &&
         settings.animationsEnabled &&
         !widget.reduceMotion;
@@ -119,9 +124,9 @@ class _PlayerVisualShellState extends ConsumerState<PlayerVisualShell>
   void dispose() {
     _positionSub?.cancel();
     _settingsSub?.close();
-    _lifecycle.setPlayerVisible(false);
     _lifecycle.removeListener(_onLifecycle);
     _bus.removeListener(_onBus);
+    _lifecycle.setPlayerVisible(false);
     _lifecycle.dispose();
     _bus.dispose();
     super.dispose();

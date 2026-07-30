@@ -9,6 +9,8 @@ import 'theme/theme_catalog.dart';
 import 'theme/theme_definition.dart';
 import '../core/constants/app_constants.dart';
 import '../core/service_locator.dart';
+import '../data/models/song_model.dart';
+import '../providers/songs_provider.dart';
 import '../services/audio/audio_player_service.dart';
 import '../services/audio/audio_handler.dart';
 import '../services/blacklist/blacklist_service.dart';
@@ -31,8 +33,12 @@ class _MusixPlayerAppState extends State<MusixPlayerApp> {
   String? _error;
   StreamSubscription? _positionSub;
   StreamSubscription? _songSub;
+  StreamSubscription? _saveSessionSub;
+  StreamSubscription? _savePositionSub;
   int? _historyCandidateId;
   DateTime? _historyCandidateSince;
+  int? _lastSaveSongId;
+  int _lastSaveTime = 0;
 
   @override
   void initState() {
@@ -44,6 +50,8 @@ class _MusixPlayerAppState extends State<MusixPlayerApp> {
   void dispose() {
     _positionSub?.cancel();
     _songSub?.cancel();
+    _saveSessionSub?.cancel();
+    _savePositionSub?.cancel();
     homeWidgetService?.dispose();
     super.dispose();
   }
@@ -108,6 +116,31 @@ class _MusixPlayerAppState extends State<MusixPlayerApp> {
         historyService.addEntry(song);
       });
 
+      _saveSessionSub = audioService.currentSongStream.listen((song) {
+        if (song == null) return;
+        final queue = audioService.queue;
+        _lastSaveSongId = song.id;
+        _lastSaveTime = DateTime.now().millisecondsSinceEpoch;
+        settingsService.saveLastSession(
+          songId: song.id,
+          positionMs: 0,
+          queueIds: queue.map((s) => s.id).toList(),
+        );
+      });
+
+      _savePositionSub = audioService.positionStream.listen((pos) {
+        final songId = _lastSaveSongId;
+        if (songId == null) return;
+        final now = DateTime.now().millisecondsSinceEpoch;
+        if (now - _lastSaveTime <= 15000) return;
+        _lastSaveTime = now;
+        settingsService.saveLastSession(
+          songId: songId,
+          positionMs: pos.inMilliseconds,
+          queueIds: audioService.queue.map((s) => s.id).toList(),
+        );
+      });
+
       // notificationColor is applied at service init (Android MediaStyle accent).
       // Layout/typography of the system notification cannot be themed from Flutter.
       audioHandler = await AudioService.init(
@@ -167,6 +200,8 @@ class _AppWithTheme extends ConsumerStatefulWidget {
 class _AppWithThemeState extends ConsumerState<_AppWithTheme> {
   late MaterialThemeConfig _themeConfig;
   StreamSubscription<ThemeId>? _themeSub;
+  bool _restoreAttempted = false;
+  bool _listenerRegistered = false;
 
   @override
   void initState() {
@@ -187,6 +222,47 @@ class _AppWithThemeState extends ConsumerState<_AppWithTheme> {
 
   @override
   Widget build(BuildContext context) {
+    final lastSongId = settingsService.lastSongId;
+    if (!_listenerRegistered && lastSongId != null) {
+      _listenerRegistered = true;
+      ref.listen(songsProvider, (_, next) async {
+        if (_restoreAttempted) return;
+        final songs = next.valueOrNull;
+        if (songs == null || songs.isEmpty) return;
+        _restoreAttempted = true;
+
+        final songIndex = songs.indexWhere((s) => s.id == lastSongId);
+        if (songIndex == -1) return;
+        final song = songs[songIndex];
+
+        final savedIds = settingsService.lastQueueIds;
+        List<SongModel> queue;
+        if (savedIds.isNotEmpty) {
+          queue = [];
+          final usedId = <int>{};
+          for (final id in savedIds) {
+            if (usedId.contains(id)) continue;
+            final idx = songs.indexWhere((s) => s.id == id);
+            if (idx != -1) {
+              queue.add(songs[idx]);
+              usedId.add(id);
+            }
+          }
+          if (!usedId.contains(lastSongId)) {
+            queue.insert(0, song);
+          }
+        } else {
+          queue = [song];
+        }
+
+        await audioService.play(song, playlist: queue);
+        final pos = Duration(milliseconds: settingsService.lastPositionMs);
+        if (pos > Duration.zero) {
+          await audioService.seek(pos);
+        }
+      });
+    }
+
     return MaterialApp.router(
       title: 'Musix Player',
       debugShowCheckedModeBanner: false,
