@@ -1,1 +1,4 @@
-enum PlayerAnimationType { waves, equalizer, pulse, vinyl, minimal, none }
+import '../../../visual/models/visualizer_type.dart';
+
+/// Legacy alias — prefer [VisualizerType].
+typedef PlayerAnimationType = VisualizerType;

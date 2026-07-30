@@ -5,16 +5,13 @@ import 'package:just_audio/just_audio.dart';
 import '../../app/theme/theme_tokens.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/animated_favorite_button.dart';
-import '../../core/widgets/artwork_image.dart';
 import '../../core/widgets/pixel_effects.dart';
-import '../../core/widgets/player_animations/animation_type.dart';
-import '../../core/widgets/player_animations/player_animation_wrapper.dart';
 import '../../core/widgets/themed_slider_thumb.dart';
 import '../../data/models/song_model.dart';
 import '../../providers/audio_provider.dart';
 import '../../providers/favorites_provider.dart';
-import '../../providers/settings_provider.dart';
 import '../../services/audio/audio_player_service.dart';
+import '../../visual/widgets/player_visual_shell.dart';
 
 enum _PlayerLayout { compact, normal, wide }
 
@@ -30,8 +27,6 @@ class PlayerScreen extends ConsumerWidget {
     final audioService = ref.read(audioPlayerServiceProvider);
     final shuffle = ref.watch(shuffleModeProvider).valueOrNull ?? false;
     final loopMode = ref.watch(loopModeProvider).valueOrNull ?? LoopMode.off;
-    final animationType = ref.watch(playerAnimationProvider).valueOrNull ??
-        PlayerAnimationType.vinyl;
 
     return Scaffold(
       body: currentSong.when(
@@ -47,7 +42,6 @@ class PlayerScreen extends ConsumerWidget {
             audioService: audioService,
             isShuffle: shuffle,
             loopMode: loopMode,
-            animationType: animationType,
           );
         },
       ),
@@ -64,7 +58,6 @@ class _PlayerContent extends ConsumerWidget {
     required this.audioService,
     required this.isShuffle,
     required this.loopMode,
-    required this.animationType,
   });
 
   final SongModel song;
@@ -74,7 +67,6 @@ class _PlayerContent extends ConsumerWidget {
   final AudioPlayerService audioService;
   final bool isShuffle;
   final LoopMode loopMode;
-  final PlayerAnimationType animationType;
 
   _PlayerLayout _layoutFor(BoxConstraints c) {
     if (c.maxWidth >= 600 && c.maxWidth > c.maxHeight) {
@@ -135,10 +127,9 @@ class _PlayerContent extends ConsumerWidget {
                   },
                 );
 
-                final artwork = _PlayerArtwork(
+                final artwork = PlayerVisualShell(
                   song: song,
                   isPlaying: isPlaying,
-                  animationType: animationType,
                   reduceMotion: reduceMotion,
                   side: artSide,
                 );
@@ -284,74 +275,6 @@ class _PlayerAppBar extends StatelessWidget {
             icon: const Icon(Icons.queue_music_rounded),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _PlayerArtwork extends StatelessWidget {
-  const _PlayerArtwork({
-    required this.song,
-    required this.isPlaying,
-    required this.animationType,
-    required this.reduceMotion,
-    required this.side,
-  });
-
-  final SongModel song;
-  final bool isPlaying;
-  final PlayerAnimationType animationType;
-  final bool reduceMotion;
-  final double side;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.musixThemeOrNull;
-    final themeRadius = tokens?.artworkRadius ?? 24.0;
-    final radius = animationType == PlayerAnimationType.vinyl && !reduceMotion
-        ? 999.0
-        : themeRadius;
-    final duration = tokens?.mediumAnim ?? const Duration(milliseconds: 350);
-
-    // ArtworkImage applies token border/radius; optional glow for themed chrome.
-    Widget art = ArtworkImage(
-      key: ValueKey(song.id),
-      imageUri: song.artworkUri,
-      albumId: song.albumId,
-      size: double.infinity,
-      borderRadius: radius,
-    );
-    if (tokens?.glowColor != null && isPlaying) {
-      art = GlowEffect(color: tokens!.glowColor, radius: 12, child: art);
-    }
-
-    return SizedBox(
-      width: side,
-      height: side,
-      child: PlayerAnimationWrapper(
-        animationType: animationType,
-        isPlaying: isPlaying,
-        reduceMotion: reduceMotion,
-        child: AnimatedSwitcher(
-          duration: duration,
-          switchInCurve: tokens?.defaultCurve ?? Curves.easeOut,
-          switchOutCurve: Curves.easeIn,
-          transitionBuilder: (child, animation) {
-            return FadeTransition(
-              opacity: animation,
-              child: ScaleTransition(
-                scale: Tween<double>(begin: 0.92, end: 1.0).animate(
-                  CurvedAnimation(
-                    parent: animation,
-                    curve: tokens?.defaultCurve ?? Curves.easeOutCubic,
-                  ),
-                ),
-                child: child,
-              ),
-            );
-          },
-          child: art,
-        ),
       ),
     );
   }

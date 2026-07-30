@@ -4,8 +4,11 @@ import '../app/theme/theme_catalog.dart';
 import '../app/theme/theme_definition.dart';
 import '../core/service_locator.dart';
 import '../core/utils/seeded_stream.dart';
-import '../core/widgets/player_animations/animation_type.dart';
 import '../services/settings/settings_service.dart';
+import '../visual/models/visualizer_type.dart';
+import '../visual/providers/visual_providers.dart';
+
+export '../visual/providers/visual_providers.dart';
 
 final settingsServiceProvider = Provider<SettingsService>((ref) {
   return settingsService;
@@ -39,7 +42,8 @@ final sortPreferenceProvider = StreamProvider<SortPreference>((ref) {
   return seededStream(service.sortPreference, service.sortStream);
 });
 
-final playerAnimationProvider = StreamProvider<PlayerAnimationType>((ref) {
-  final service = ref.watch(settingsServiceProvider);
-  return seededStream(service.playerAnimation, service.animationStream);
-});
+/// Legacy name — same stream as [visualizerTypeProvider].
+final playerAnimationProvider = visualizerTypeProvider;
+
+/// Legacy typedef.
+typedef PlayerAnimationType = VisualizerType;

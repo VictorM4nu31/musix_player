@@ -5,12 +5,14 @@ import '../../app/theme/theme_catalog.dart';
 import '../../app/theme/theme_tokens.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/widgets/bottom_sheet_drag_handle.dart';
-import '../../core/widgets/player_animations/animation_type.dart';
 import '../../providers/blacklist_provider.dart';
 import '../../providers/history_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/songs_provider.dart';
 import '../../services/settings/settings_service.dart';
+import '../../visual/models/animation_preset.dart';
+import '../../visual/models/visual_quality.dart';
+import '../../visual/models/visualizer_type.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -22,8 +24,7 @@ class SettingsScreen extends ConsumerWidget {
         ref.watch(themePreferenceProvider).valueOrNull ?? ThemePreference.system;
     final sortPreference =
         ref.watch(sortPreferenceProvider).valueOrNull ?? SortPreference.title;
-    final animation = ref.watch(playerAnimationProvider).valueOrNull ??
-        PlayerAnimationType.vinyl;
+    final visual = ref.watch(visualSettingsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -47,6 +48,65 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           _buildSection(
             theme,
+            title: 'Visualización',
+            children: [
+              _SettingsTile(
+                icon: Icons.auto_awesome_rounded,
+                title: 'Preset',
+                subtitle: visual.preset.displayName,
+                onTap: () => _showPresetDialog(context, ref, visual.preset),
+              ),
+              _SettingsTile(
+                icon: Icons.animation_rounded,
+                title: 'Visualizador',
+                subtitle: visual.visualizerType.displayName,
+                onTap: () =>
+                    _showVisualizerDialog(context, ref, visual.visualizerType),
+              ),
+              _SettingsTile(
+                icon: Icons.high_quality_rounded,
+                title: 'Calidad visual',
+                subtitle: visual.quality.displayName,
+                onTap: () => _showQualityDialog(context, ref, visual.quality),
+              ),
+              SwitchListTile(
+                secondary: Icon(
+                  Icons.motion_photos_on_rounded,
+                  color: theme.colorScheme.primary,
+                ),
+                title: const Text('Animaciones'),
+                subtitle: const Text('Activar efectos del reproductor'),
+                value: visual.animationsEnabled,
+                onChanged: (v) {
+                  ref.read(settingsServiceProvider).setAnimationsEnabled(v);
+                },
+              ),
+              SwitchListTile(
+                secondary: Icon(
+                  Icons.graphic_eq_rounded,
+                  color: theme.colorScheme.primary,
+                ),
+                title: const Text('Reacción al audio'),
+                subtitle: const Text('Movimiento pseudo-rítmico (sin FFT)'),
+                value: visual.audioReactive,
+                onChanged: visual.animationsEnabled
+                    ? (v) {
+                        ref.read(settingsServiceProvider).setAudioReactive(v);
+                      }
+                    : null,
+              ),
+              _IntensityTile(
+                value: visual.intensity,
+                enabled: visual.animationsEnabled,
+                onCommit: (v) {
+                  ref.read(settingsServiceProvider).setVisualIntensity(v);
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildSection(
+            theme,
             title: 'Reproducción',
             children: [
               _SettingsTile(
@@ -54,12 +114,6 @@ class SettingsScreen extends ConsumerWidget {
                 title: 'Orden predeterminado',
                 subtitle: _getSortName(sortPreference),
                 onTap: () => _showSortDialog(context, ref, sortPreference),
-              ),
-              _SettingsTile(
-                icon: Icons.animation_rounded,
-                title: 'Animación del reproductor',
-                subtitle: _getAnimationName(animation),
-                onTap: () => _showAnimationDialog(context, ref, animation),
               ),
               _SettingsTile(
                 icon: Icons.block_rounded,
@@ -129,40 +183,73 @@ class SettingsScreen extends ConsumerWidget {
     return '$count canciones bloqueadas';
   }
 
-  String _getAnimationName(PlayerAnimationType animation) {
-    switch (animation) {
-      case PlayerAnimationType.waves:
-        return 'Ondas';
-      case PlayerAnimationType.equalizer:
-        return 'Ecualizador';
-      case PlayerAnimationType.pulse:
-        return 'Pulso';
-      case PlayerAnimationType.vinyl:
-        return 'Vinilo';
-      case PlayerAnimationType.minimal:
-        return 'Minimalista';
-      case PlayerAnimationType.none:
-        return 'Sin animación';
-    }
-  }
-
-  void _showAnimationDialog(
+  void _showVisualizerDialog(
     BuildContext context,
     WidgetRef ref,
-    PlayerAnimationType current,
+    VisualizerType current,
   ) {
     final settings = ref.read(settingsServiceProvider);
 
     showDialog(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text('Animación del reproductor'),
-        children: PlayerAnimationType.values.map((type) {
+        title: const Text('Visualizador'),
+        children: VisualizerType.values.map((type) {
           return _SortOption(
-            title: _getAnimationName(type),
+            title: type.displayName,
             isSelected: current == type,
             onTap: () {
-              settings.setPlayerAnimation(type);
+              settings.setVisualizerType(type);
+              Navigator.pop(context);
+            },
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  void _showPresetDialog(
+    BuildContext context,
+    WidgetRef ref,
+    AnimationPreset current,
+  ) {
+    final settings = ref.read(settingsServiceProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Preset visual'),
+        children: AnimationPreset.values.map((preset) {
+          return _SortOption(
+            title: preset.displayName,
+            isSelected: current == preset,
+            onTap: () {
+              settings.applyAnimationPreset(preset);
+              Navigator.pop(context);
+            },
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  void _showQualityDialog(
+    BuildContext context,
+    WidgetRef ref,
+    VisualQuality current,
+  ) {
+    final settings = ref.read(settingsServiceProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Calidad visual'),
+        children: VisualQuality.values.map((quality) {
+          return _SortOption(
+            title: quality.displayName,
+            isSelected: current == quality,
+            onTap: () {
+              settings.setVisualQuality(quality);
               Navigator.pop(context);
             },
           );
@@ -364,6 +451,55 @@ class _SettingsTile extends StatelessWidget {
       onTap: onTap,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(radius),
+      ),
+    );
+  }
+}
+
+class _IntensityTile extends StatefulWidget {
+  const _IntensityTile({
+    required this.value,
+    required this.enabled,
+    required this.onCommit,
+  });
+
+  final double value;
+  final bool enabled;
+  final ValueChanged<double> onCommit;
+
+  @override
+  State<_IntensityTile> createState() => _IntensityTileState();
+}
+
+class _IntensityTileState extends State<_IntensityTile> {
+  late double _local;
+
+  @override
+  void initState() {
+    super.initState();
+    _local = widget.value;
+  }
+
+  @override
+  void didUpdateWidget(covariant _IntensityTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value) {
+      _local = widget.value;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListTile(
+      leading: Icon(Icons.tune_rounded, color: theme.colorScheme.primary),
+      title: const Text('Intensidad'),
+      subtitle: Slider(
+        value: _local,
+        onChanged: widget.enabled
+            ? (v) => setState(() => _local = v)
+            : null,
+        onChangeEnd: widget.enabled ? widget.onCommit : null,
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:musix_player/app/theme/theme_id.dart';
 import 'package:musix_player/services/settings/settings_service.dart';
+import 'package:musix_player/visual/models/animation_preset.dart';
+import 'package:musix_player/visual/models/visual_quality.dart';
+import 'package:musix_player/visual/models/visualizer_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -100,5 +102,37 @@ void main() {
       expect(reloaded.themePreference, id);
       await reloaded.dispose();
     }
+  });
+
+  test('migrates legacy player_animation index to visualizer type', () async {
+    // Legacy: 2 = pulse
+    SharedPreferences.setMockInitialValues({
+      'player_animation': 2,
+    });
+    final service = SettingsService();
+    await service.init();
+    expect(service.visualizerType, VisualizerType.pulse);
+    await service.dispose();
+  });
+
+  test('persists visualizer and preset settings', () async {
+    final first = SettingsService();
+    await first.init();
+    await first.applyAnimationPreset(AnimationPreset.dynamic);
+    await first.setVisualQuality(VisualQuality.high);
+    await first.setVisualIntensity(0.4);
+    await first.setAudioReactive(false);
+    await first.setAnimationsEnabled(false);
+    await first.dispose();
+
+    final second = SettingsService();
+    await second.init();
+    expect(second.animationPreset, AnimationPreset.dynamic);
+    expect(second.visualizerType, VisualizerType.pulse);
+    expect(second.visualQuality, VisualQuality.high);
+    expect(second.visualIntensity, closeTo(0.4, 0.001));
+    expect(second.audioReactive, isFalse);
+    expect(second.animationsEnabled, isFalse);
+    await second.dispose();
   });
 }
