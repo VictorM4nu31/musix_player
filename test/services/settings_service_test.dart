@@ -131,7 +131,7 @@ void main() {
     final second = SettingsService();
     await second.init();
     expect(second.animationPreset, AnimationPreset.dynamic);
-    expect(second.visualizerType, VisualizerType.spectrum);
+    expect(second.visualizerType, VisualizerType.shader);
     expect(second.visualQuality, VisualQuality.high);
     expect(second.visualIntensity, closeTo(0.4, 0.001));
     expect(second.audioReactive, isFalse);

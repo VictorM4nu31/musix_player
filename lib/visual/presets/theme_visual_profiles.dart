@@ -36,7 +36,7 @@ class ThemeVisualProfile {
       ThemeId.system =>
         const ThemeVisualProfile(
           suggestedPreset: AnimationPreset.dynamic,
-          suggestedVisualizer: VisualizerType.pulse,
+          suggestedVisualizer: VisualizerType.shader,
         ),
     };
   }

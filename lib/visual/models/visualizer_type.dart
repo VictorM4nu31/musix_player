@@ -6,7 +6,9 @@ enum VisualizerType {
   waves,
   equalizer,
   spectrum,
-  particle;
+  particle,
+  shader,
+  coverFlow;
 
   String get storageId => name;
 
@@ -19,6 +21,8 @@ enum VisualizerType {
         VisualizerType.equalizer => 'Ecualizador',
         VisualizerType.spectrum => 'Espectro',
         VisualizerType.particle => 'Partículas',
+        VisualizerType.shader => 'Efectos Shader',
+        VisualizerType.coverFlow => 'Cover Flow',
       };
 
   static VisualizerType? tryParse(String? value) {
@@ -52,5 +56,7 @@ enum VisualizerType {
         VisualizerType.none => 5,
         VisualizerType.spectrum => 2, // closest legacy: pulse
         VisualizerType.particle => 0, // closest legacy: waves
+        VisualizerType.shader => 4, // closest legacy: minimal
+        VisualizerType.coverFlow => 4, // closest legacy: minimal
       };
 }

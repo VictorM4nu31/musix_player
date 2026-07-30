@@ -6,6 +6,8 @@ import 'pulse_renderer.dart';
 import 'spectrum_renderer.dart';
 import 'vinyl_renderer.dart';
 import '../particles/particle_renderer.dart';
+import '../cover_flow/cover_flow_renderer.dart';
+import '../shaders/shader_renderer.dart';
 import 'visualizer_renderer.dart';
 import 'waves_renderer.dart';
 
@@ -21,6 +23,8 @@ class VisualizerRegistry {
     VisualizerType.equalizer: const EqualizerRenderer(),
     VisualizerType.spectrum: const SpectrumRenderer(),
     VisualizerType.particle: const ParticleRenderer(),
+    VisualizerType.shader: const ShaderRenderer(),
+    VisualizerType.coverFlow: const CoverFlowRenderer(),
   };
 
   static VisualizerRenderer resolve(VisualizerType type) {

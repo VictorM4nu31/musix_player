@@ -31,16 +31,16 @@ enum AnimationPreset {
   VisualizerType get defaultVisualizer => switch (this) {
         AnimationPreset.performance => VisualizerType.none,
         AnimationPreset.minimal => VisualizerType.minimal,
-        AnimationPreset.dynamic => VisualizerType.spectrum,
+        AnimationPreset.dynamic => VisualizerType.shader,
         AnimationPreset.vinyl => VisualizerType.vinyl,
-        AnimationPreset.retro => VisualizerType.equalizer,
+        AnimationPreset.retro => VisualizerType.coverFlow,
         AnimationPreset.cyber => VisualizerType.particle,
       };
 
   VisualQuality get defaultQuality => switch (this) {
         AnimationPreset.performance => VisualQuality.low,
         AnimationPreset.minimal => VisualQuality.low,
-        AnimationPreset.dynamic => VisualQuality.medium,
+        AnimationPreset.dynamic => VisualQuality.high,
         AnimationPreset.vinyl => VisualQuality.low,
         AnimationPreset.retro => VisualQuality.medium,
         AnimationPreset.cyber => VisualQuality.ultra,
